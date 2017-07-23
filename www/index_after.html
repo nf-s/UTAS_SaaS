@@ -1,0 +1,32 @@
+<div class="main">
+<form name="new_job" method="get" action="?new_job">
+    <h2>Create New Job</h2>
+    <input type="hidden" name="action" value="new_job"/>
+    <input class="text_input" type="text" name="job-kwords" value="Enter k number of words to track..." width="400"/><br/>
+    <input class="text_input" type="text" name="job-stream-hostname" value="Enter stream server hostname..." width="400"/><br/>
+    <input class="text_input" type="text" name="job-stream-port" value="Enter stream server port..." width="400"/><br/>
+    <input class="button_input_submit"type="submit" value="Create new job request"/>
+    <input class="button_input_reset" type="reset" value="Reset form"/>
+</form>
+</div>
+
+<div class="main">
+<form name="job_results" method="get" action="?job_results">
+    <h2>View Job Results</h2>
+    <input type="hidden" name="action" value="job_results"/>
+    <input type="hidden" name="update_results" value="y"/>
+    <input class="text_input" type="text" name="job-id" value="Enter job passcode..." width="400"/><br/>
+    <input class="button_input_submit"type="submit" value="Request job results"/>
+</form>
+</div>
+
+<div class="main">
+<form name="job_delete" method="get" action="?job_delete">
+    <h2>Stop Job\View Job Bill</h2>
+    <input type="hidden" name="action" value="job_delete"/>
+    <input class="text_input" type="text" name="job-id" value="Enter job passcode..."  width="400"/><br/>
+    <input class="button_input_submit"type="submit" value="Request to stop job"/>
+</form>
+</div>
+</body>
+</html>
