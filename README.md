@@ -4,14 +4,14 @@
 _COMPILE_PROJECT.bat
 
 ## To Run
-_RUN_MASTER.bat
-_RUN_LOCALWORKER.bat
-_RUN_STREAMSERVER.bat
+_RUN_MASTER.bat  
+_RUN_LOCALWORKER.bat  
+_RUN_STREAMSERVER.bat  
 
 NOTE if you use RUN_STREAMSERVER.bat the default port is 1111 and the default text file is stream_server_text.txt
 
 ## To interact with Master
-go to http://localhost:8080/
+go to http://localhost:8080/  
 website can be used to create/view results/stop jobs
 
 - To view job and worker status
