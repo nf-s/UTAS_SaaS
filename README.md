@@ -21,7 +21,7 @@ OR use commands bellow
 
 ## Commands
 - To create a new job
-  -`new <k words> <stream server hostname> <stream server port>`
+  - `new <k words> <stream server hostname> <stream server port>`
 
 - To view results for job
   - `results <job passcode>`
