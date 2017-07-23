@@ -33,7 +33,7 @@ OR use commands bellow
   - `workers_status`
 
 - To view all job passcodes with status
-  - `obs_status`
+  - `jobs_status`
 
 - To add already started local worker
   - `add_worker <worker hostname> <worker port>`
