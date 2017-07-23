@@ -1,1 +1,3 @@
-out\
+nectarcloud_config.json
+out/
+.idea/

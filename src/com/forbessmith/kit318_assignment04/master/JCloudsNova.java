@@ -11,7 +11,14 @@ import org.jclouds.openstack.nova.v2_0.options.CreateServerOptions;
 import java.io.Closeable;
 import java.io.IOException;
 
-import org.json.*;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.Iterator;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 public class JCloudsNova implements Closeable {
 	public static final String TAG="JCloudsNova";
@@ -23,10 +30,24 @@ public class JCloudsNova implements Closeable {
     private int serverNumVCpus;
 
 	JCloudsNova() {
-		JSONObject obj = new JSONObject("nectarcloud_config.json");
-		String osTenantName = obj.getJSONObject("nectarCloudCredentials").getString("osTenantName");
-		String osUsername = obj.getJSONObject("nectarCloudCredentials").getString("osUsername");
-		String credential = obj.getJSONObject("nectarCloudCredentials").getString("credential");
+		JSONParser parser = new JSONParser();
+		String osTenantName, osUsername, credential;
+		osTenantName = osUsername = credential = null;
+ 
+        try {
+ 
+            Object obj = parser.parse(new FileReader(
+                    "nectarcloud_config.json"));
+ 
+            JSONObject jsonObject = (JSONObject) obj;
+
+			osTenantName = (String) jsonObject.get("osTenantName");
+			osUsername = (String) jsonObject.get("osUsername");
+			credential = (String) jsonObject.get("credential");
+ 
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         String provider = "openstack-nova";
         String identity = String.format("%1$s:%2$s", osTenantName, osUsername); //concat osTenantName and osUsername with a ':'
