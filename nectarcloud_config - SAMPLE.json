@@ -1,9 +1,9 @@
-// rename file to nectarcloud_config.json
+/* SAMPLE NECTAR CLOUD CONFIGURATION FILE */
+
+// Rename file to nectarcloud_config.json
 
 {
-    "nectarCloudCredentials": {
-        "osTenantName": "",
-        "osUsername": "",
-        "credential": ""
-    }
+    "osTenantName": "",
+    "osUsername": "",
+    "credential": ""
 }
