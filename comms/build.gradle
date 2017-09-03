@@ -1,0 +1,12 @@
+group 'au.edu.utas.lm_nfs_sg'
+version '1.0'
+
+apply plugin: 'java'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.11'
+}

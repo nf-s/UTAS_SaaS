@@ -46,6 +46,8 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
-nectarcloud_config.json
 out/
+build/
 .idea/
+
+master/src/main/resources/nectarcloud_config.json

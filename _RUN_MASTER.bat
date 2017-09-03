@@ -1,1 +1,0 @@
-java -cp "out\production\KIT318_Assignment04;lib/*" com.forbessmith.kit318_assignment04.master.Master

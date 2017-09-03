@@ -1,0 +1,18 @@
+plugins {
+    id 'java'
+}
+
+group 'au.edu.utas.lm_nfs_sg'
+version '1.0'
+
+allprojects {
+    repositories {
+        mavenCentral()
+        // For github repo dependencies
+        maven { url "https://jitpack.io" }
+    }
+    tasks.withType(JavaCompile) {
+        sourceCompatibility = '1.8'
+        targetCompatibility = '1.8'
+    }
+}
