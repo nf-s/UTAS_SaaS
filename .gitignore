@@ -52,4 +52,8 @@ build/
 .idea/
 master_rest/job/
 
+
+master_rest/src/main/webapp/js/dropzone.js
+master_rest/src/main/webapp/js/brutusin-json-forms.js
+
 master/src/main/resources/nectarcloud_config.json
