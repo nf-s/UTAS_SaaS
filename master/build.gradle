@@ -24,6 +24,9 @@ dependencies {
     compile "mysql:mysql-connector-java:5.1.25"
     // End JCLOUDS
 
+    // XML Library
+    compile 'org.jdom:jdom2:2.0.6'
+
     // https://mvnrepository.com/artifact/com.googlecode.json-simple/json-simple
     compile 'com.googlecode.json-simple:json-simple:1.1.1'
 

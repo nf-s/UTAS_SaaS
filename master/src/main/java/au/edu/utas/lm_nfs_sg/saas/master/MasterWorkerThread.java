@@ -14,7 +14,7 @@ import java.util.UUID;
 public class MasterWorkerThread implements Runnable, SocketClient.MessageCallback {
 
 	enum Status {
-		INACTIVE, CREATING, INITIATING, CONNECTING, ACTIVE, UNREACHABLE, ERROR
+		INACTIVE, CREATING, INITIATING, CONNECTING, ACTIVE, UNREACHABLE, ERROR, FAILURE
 	}
 
 	public static final String  TAG = "<MasterWorkerThread>";
@@ -33,12 +33,12 @@ public class MasterWorkerThread implements Runnable, SocketClient.MessageCallbac
 	private int workerPort;
 	private SocketClient workerSocketClient;
 
-	private Double cpuUsage = 1.0;
-	private Calendar resourceCheckTime;
+	private Boolean available = true;
+	private int numJobsRunning = 0;
+
 	private Calendar connectionTimeoutTime;
 
 	private StatusChangeListener statusChangeListener;
-	private ResourceUsageReceivedListener resourcesReceivedListener;
 
 	private volatile Boolean running;
 	private volatile Boolean waiting;
@@ -155,7 +155,7 @@ public class MasterWorkerThread implements Runnable, SocketClient.MessageCallbac
 			//setStatus(Status.INITIATING);
 		} else {
 			System.out.println(TAG+" could not create new cloud server - status = "+cloudServerStatus);
-			Master.createWorkerFailed(this);
+			setStatus(Status.FAILURE);
 			running = false;
 		}
 	}
@@ -176,10 +176,7 @@ public class MasterWorkerThread implements Runnable, SocketClient.MessageCallbac
 					break;
 				case CONNECTED:
 					setStatus(Status.ACTIVE);
-					if (!workerCreated) {
-						workerCreated = true;
-						Master.newWorkerCreated();
-					}
+					workerCreated = true;
 					break;
 				case DISCONNECTED:
 					setStatus(Status.INACTIVE);
@@ -226,86 +223,23 @@ public class MasterWorkerThread implements Runnable, SocketClient.MessageCallbac
 
 		switch (messageCommand) {
 			case "ready":
+				System.out.println(getTag()+" worker ready");
 				break;
 
-			case "result_listening_port":
-				try {
-					String jobId = message.split(" ")[1];
-					int jobPort = Integer.parseInt(message.split(" ")[2]);
-					System.out.println(getTag()+" received job port number "+ jobId+" port="+jobPort);
-					Master.jobSocketPortReceived(jobId, jobPort);
-					resourceCheckTime = null;
-				} catch (NumberFormatException e) {
-					System.out.println(getTag()+" Couldn't retrieve WorkerProcess workerPort - trying again");
-					workerSocketClient.sendMessage("result_listening_port resend");
-				}
+			case "job_started":
+				System.out.println(getTag()+" job started job= "+message.split(" ")[1]);
+				available=true;
+				break;
+
+			case "job_not_started":
+				// add master to reassign job
 				break;
 
 			case "work_process_failed":
 				System.out.println(getTag()+" work_process_failed job= "+message.split(" ")[1]);
 				break;
-
-			case "cpu_load":
-				cpuUsage = Double.parseDouble(message.split(" ")[1]);
-				System.out.println(getTag()+" cpu usage - "+ cpuUsage);
-				break;
-
-			case "mem_free":
-				//memFree = Long.parseLong(message.split(" ")[1]);
-				//System.out.println(getTag()+" free memory - "+ memFree);
-				break;
-
-			case "resources_check_finished":
-				resourceCheckTime = Calendar.getInstance();
-				System.out.println(getTag()+" finished receiving resource utilisation");
-				if (resourcesReceivedListener != null)
-					resourcesReceivedListener.onResourcesReceived(this);
-				break;
-
 		}
 	}
-
-	void getCpuUsageFromWorker() {
-		if (!isLastResourceUsageCheckRecent()) {
-			// If non-cloud worker (with Sigar installed)
-			if (!serverOnCloud) {
-				if (workerSocketClient == null || !workerSocketClient.isRunning())
-					connectToWorker();
-				System.out.println(getTag() + " asking worker for resource usage");
-				workerSocketClient.sendMessage("send_resource_usage");
-			}
-			// if cloud worker
-			else {
-				System.out.println(TAG+" calculating pseudo worker resource usage");
-				generatePseudoCpuUsage();
-			}
-		} else {
-			System.out.println(getTag() + " already have recent resource usage");
-			if (resourcesReceivedListener != null)
-				resourcesReceivedListener.onResourcesReceived(this);
-		}
-	}
-
-	private void generatePseudoCpuUsage() {
-		//cpuUsage = Double.parseDouble(message.split(" ")[1]);
-		Iterator<Map.Entry<String, Job>> jobIterator = Master.getActiveJobs().entrySet().iterator();
-		int totalKWords = 0;
-		while (jobIterator.hasNext()) {
-			Job currrentJob = jobIterator.next().getValue();
-			if (currrentJob.getStatus() == Job.Status.ACTIVE && currrentJob.getWorker() == this)
-				totalKWords += currrentJob.getkFreqWords();
-		}
-		// cpu usage ~ 10,000,000 k words per virtual cpu
-		cpuUsage = (double) (totalKWords * cloudServerNumVCpus) /10000000;
-		if (cpuUsage > 1)
-			cpuUsage = 1.0;
-		System.out.println(getTag()+" [pseudo] cpu usage - "+ cpuUsage);
-		resourceCheckTime = Calendar.getInstance();
-		System.out.println(getTag()+" finished receiving resource utilisation");
-		if (resourcesReceivedListener != null)
-			resourcesReceivedListener.onResourcesReceived(this);
-	}
-
 
 	// ------------------------------------------------------------------------
 	// JOB METHODS
@@ -314,50 +248,12 @@ public class MasterWorkerThread implements Runnable, SocketClient.MessageCallbac
 	/**
 	 *  Creates a new job - sends command to worker
 	 */
-	synchronized Boolean createNewJob(Job job) {
-		System.out.println(getTag()+" Create new job "+job.getId()+" "+job.getkFreqWords()+" "+job.getStreamHostname()+" "+job.getStreamPort());
-		workerSocketClient.sendMessage("new_worker_process "
-				+job.getId()+" "+job.getkFreqWords()+" "+job.getStreamHostname()+" "+job.getStreamPort());
-		return true;
-	}
+	synchronized void createNewJob(Job job) {
+		System.out.println(getTag()+" Create new job "+job.getId());
+		workerSocketClient.sendMessage("new_worker_process "+job.getId());
+		available=true;
 
-	/**
-	 *  Connects to job worker process - asks for results
-	 *  When results are received the connection is killed
-	 */
-	void getResultsOnce(Job job) {
-		if (job.getStatus() == Job.Status.ACTIVE) {
-			job.setResults("Results from "+DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM).format(Calendar.getInstance().getTime()));
-
-			job.setCurrentlyRetrievingResults(true);
-			int jobPort = job.getWorkerProcessPort();
-			final SocketClient workerProcessSocketClient = new SocketClient(getTag()+" [WorkerProcessClient]",workerHostname, jobPort);
-
-			workerProcessSocketClient.setOnMessageReceivedListener( message -> {
-				if (message.equals("results_finished")) {
-					job.addResults("END OF RESULTS");
-					job.setCurrentlyRetrievingResults(false);
-					System.out.println(TAG+" job "+job.getId()+" results \n"+job.getResults());
-					workerProcessSocketClient.stopRunning();
-					workerProcessSocketClient.closeSocket();
-				} else {
-					job.addResults(message);
-				}
-			});
-
-			new Thread(workerProcessSocketClient).start();
-			workerProcessSocketClient.sendMessage("results_please");
-
-			job.setOnStatusChangeListener((job1, currentStatus) -> {
-				if (!currentStatus.equals(Job.Status.ACTIVE)) {
-					workerProcessSocketClient.stopRunning();
-					workerProcessSocketClient.closeSocket();
-					job.resetResults();
-				}
-			});
-		} else {
-			System.out.println(getTag()+" job "+job.getId()+" is not active");
-		}
+		numJobsRunning ++;
 	}
 
 	/**
@@ -365,15 +261,18 @@ public class MasterWorkerThread implements Runnable, SocketClient.MessageCallbac
 	 *  When job is finished the connection is killed
 	 */
 	void finishJob(Job job) {
+		job.setStatus(Job.Status.INACTIVE);
+		/*
 		if (job.getStatus() == Job.Status.ACTIVE) {
-			int jobPort = job.getWorkerProcessPort();
 			final SocketClient workerProcessSocketClient = new SocketClient(getTag()+" [WorkerProcessClient]",workerHostname, jobPort);
 
 			workerProcessSocketClient.setOnMessageReceivedListener( message -> {
 				System.out.println(getTag() + " received " + message);
 				workerProcessSocketClient.stopRunning();
 				workerProcessSocketClient.closeSocket();
-				job.finishJob();
+
+				numJobsRunning --;
+				available=true;
 			});
 
 			new Thread(workerProcessSocketClient).start();
@@ -381,6 +280,7 @@ public class MasterWorkerThread implements Runnable, SocketClient.MessageCallbac
 		} else {
 			System.out.println(getTag()+" job "+job.getId()+" is not active");
 		}
+		*/
 	}
 
 	// ------------------------------------------------------------------------
@@ -406,24 +306,19 @@ public class MasterWorkerThread implements Runnable, SocketClient.MessageCallbac
 
 	Boolean isRunning() {return running;}
 
+	Boolean isAvailable() {
+		if (numJobsRunning > 10) {
+			available=false;
+		}
+		return available;
+	}
+
+	int getNumJobs() {
+		return numJobsRunning;
+	}
+
 	String getTag() {
 		return TAG+" "+getWorkerHost();
-	}
-
-	Double getCpuUsage() {
-		if (cpuUsage ==null) {
-			return 1.0;
-		}
-		return cpuUsage;
-	}
-
-	Boolean isLastResourceUsageCheckRecent() {
-		if (resourceCheckTime == null)
-			return false;
-
-		Calendar resourceCheckTimeCutoff = Calendar.getInstance();
-		resourceCheckTimeCutoff.add(Calendar.HOUR, -1);
-		return resourceCheckTime.after(resourceCheckTimeCutoff);
 	}
 
 	void resetLastConnectionTimeoutTime() {
@@ -448,13 +343,5 @@ public class MasterWorkerThread implements Runnable, SocketClient.MessageCallbac
 
 	interface StatusChangeListener {
 		void onJobStatusChanged(MasterWorkerThread worker, Status currentStatus) ;
-	}
-
-	void setOnResourcesReceivedListener(ResourceUsageReceivedListener listener) {
-		resourcesReceivedListener = listener;
-	}
-
-	interface ResourceUsageReceivedListener {
-		void onResourcesReceived(MasterWorkerThread worker) ;
 	}
 }

@@ -22,11 +22,9 @@ dependencies {
     //testCompile 'junit:junit:4.11'
 
     // Start REST + HTTP
-
     compile 'org.glassfish.jersey.containers:jersey-container-servlet:2.26-b09'
     compile 'org.glassfish.jersey.inject:jersey-hk2:2.26-b09'
     compile 'org.glassfish.jersey.media:jersey-media-multipart:2.26-b09'
-
     // End REST + HTTP
 
     compile project(':master')

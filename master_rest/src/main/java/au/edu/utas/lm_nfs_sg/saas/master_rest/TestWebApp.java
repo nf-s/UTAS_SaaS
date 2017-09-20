@@ -1,5 +1,6 @@
 package au.edu.utas.lm_nfs_sg.saas.master_rest;
 
+import au.edu.utas.lm_nfs_sg.saas.master.Master;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 
@@ -13,7 +14,8 @@ public class TestWebApp extends ResourceConfig {
 		register(MultiPartFeature.class);
 
 		register(DefaultMethodResource.class);
-		register(TestResource.class);
-		register(FileUpload.class);
+		register(JobResource.class);
+
+		Master.init();
 	}
 }

@@ -1,0 +1,254 @@
+{"$schema": "http://json-schema.org/draft-03/schema#",
+    "type": "object",
+    "definitions": {
+        "uploadedfiles": {
+            "type": "string",
+            "description": "Select from Uploaded Files",
+            "enum": []
+        }
+    },
+    "properties": {
+        "!formheader! 1": {
+            "type": "string",
+            "title": "Simulation options",
+            "formHeader": true
+        },
+        "Start time": {
+            "type": "string",
+            "required": true
+        },
+        "Series/Time zone": {
+            "type": "string"
+        },
+        "Simulation resolution": {
+            "type": "string"
+        },
+        "Simulation duration hours": {
+            "type": "string"
+        },
+        "Simulation projection WKT": {
+            "type": "string",
+            "format": "text",             
+            "stylesheetClass": "code_text_area"
+        },
+        "!formheader! 2": {
+            "type": "string",
+            "title": "Output options",
+            "formHeader": true
+        },
+        "Output raster file": {
+            "type": "string"
+        },
+        "Output shape file": {
+            "type": "string"
+        },
+        "Output isochrone time": {
+            "type": "string"
+        },
+        "!formheader! 3": {
+            "type": "string",
+            "title": "Gridded input data sets - these can be any GDAL compatible type",
+            "formHeader": true
+        },
+        "Fire history/Layer source file": {
+            "$ref": "#/definitions/uploadedfiles"
+        },
+        "Fire history/Layer projection WKT": {
+            "type": "string"
+        },
+        "Fire history/Layer default": {
+            "type": "string"
+        },
+        "Classification/Layer source file": {
+            "$ref": "#/definitions/uploadedfiles"
+        },
+        "Classification/Layer projection WKT": {
+            "type": "string"
+        },
+        "Elevation/Layer source file": {
+            "$ref": "#/definitions/uploadedfiles"
+        },
+        "Elevation/Layer projection WKT": {
+            "type": "string"
+        },
+        "Elevation/Layer default": {
+            "type": "string"
+        },
+        "Fuel load/Layer source file": {
+            "$ref": "#/definitions/uploadedfiles"
+        },
+        "Fuel load/Layer projection WKT": {
+            "type": "string"
+        },
+        "Fuel load/Layer default": {
+            "type": "string"
+        },
+        "Curing/Layer source file": {
+            "$ref": "#/definitions/uploadedfiles"
+        },
+        "Curing/Layer projection WKT": {
+            "type": "string"
+        },
+        "Curing/Layer default": {
+            "type": "string"
+        },
+        "Gridded/Wind/Layer direction source": {
+            "type": "string"
+        },
+        "Gridded/Wind/Layer magnitude source": {
+            "type": "string"
+        },
+        "Gridded/Temperature/Layer source file": {
+            "$ref": "#/definitions/uploadedfiles"
+        },
+        "Gridded/Relative humidity/Layer source file": {
+            "$ref": "#/definitions/uploadedfiles"
+        },
+        "Gridded/Layer projection WKT": {
+            "type": "string"
+        },
+        "!formheader! 4": {
+            "type": "string",
+            "title": "Custom layers",
+            "formHeader": true
+        },
+        "Custom/Layer name 1": {
+            "type": "string"
+        },
+        "Custom/Layer name 2": {
+            "type": "string"
+        },
+        "Custom/Layer name 3": {
+            "type": "string"
+        },
+        "Custom/Layer name 4": {
+            "type": "string"
+        },
+        "Custom/Layer name 5": {
+            "type": "string"
+        },
+        "Custom/Layer default 1": {
+            "type": "string"
+        },
+        "Custom/Layer default 2": {
+            "type": "string"
+        },
+        "Custom/Layer default 3": {
+            "type": "string"
+        },
+        "Custom/Layer default 4": {
+            "type": "string"
+        },
+        "Custom/Layer default 5": {
+            "type": "string"
+        },
+        "!formheader! 5": {
+            "type": "string",
+            "title": "Series input data sets - must be a CSV file",
+            "formHeader": true
+        },
+        "Series/Source file": {
+            "$ref": "#/definitions/uploadedfiles"
+        },
+        
+        "Series/Script": {
+            "type": "string",
+            "format": "text",             
+            "stylesheetClass": "code_text_area"
+        },
+        "!formheader! 6": {
+            "type": "string",
+            "title": "Rate of spread models - in C code",
+            "formHeader": true
+        },
+        "RoS 1": {
+            "type": "string",
+            "format": "text",             
+            "stylesheetClass": "code_text_area"
+        },
+        "RoS 2": {
+            "type": "string",
+            "format": "text",             
+            "stylesheetClass": "code_text_area"
+        },
+        "RoS 3": {
+            "type": "string",
+            "format": "text",             
+            "stylesheetClass": "code_text_area"
+        },
+        "RoS 4": {
+            "type": "string",
+            "format": "text",             
+            "stylesheetClass": "code_text_area"
+        },
+        "RoS 5": {
+            "type": "string",
+            "format": "text",             
+            "stylesheetClass": "code_text_area"
+        },
+        "RoS 6": {
+            "type": "string",
+            "format": "text",             
+            "stylesheetClass": "code_text_area"
+        },
+        "!formheader! 7": {
+            "type": "string",
+            "title": "Input options",
+            "formHeader": true
+        },
+        "Start point script": {
+            "type": "Start point script"
+        },
+        "Shape file input source": {
+            "$ref": "#/definitions/uploadedfiles"
+        },
+        "!formheader! 8": {
+            "type": "string",
+            "title": "Initialisation model - in C code with an optional Python script to generate C code",
+            "formHeader": true
+        },
+        "Initialisation start string": {
+            "type": "string",
+            "format": "text",             
+            "stylesheetClass": "code_text_area"
+        },
+        "Initialisation end string": {
+            "type": "string",
+            "format": "text",             
+            "stylesheetClass": "code_text_area"
+        },
+        "Initialisation Python input file": {
+            "$ref": "#/definitions/uploadedfiles"
+        },
+        "Initialisation Python script": {
+            "type": "string",
+            "format": "text",             
+            "stylesheetClass": "code_text_area"
+        },
+        "!formheader! 9": {
+            "type": "string",
+            "title": "Web map options",
+            "formHeader": true
+        },
+        "Slippy map URL": {
+            "type": "string"
+        },
+        "Slippy map transpose": {
+            "type": "string"
+        },
+        "Slippy map text": {
+            "type": "string"
+        },
+        "Slippy map proxy": {
+            "type": "string"
+        },
+        "Slippy map port": {
+            "type": "string"
+        },
+        "Slippy map reproject": {
+            "type": "string"
+        }
+    }
+        
+    
+}

@@ -74,7 +74,8 @@ public class Worker implements SocketServer1To1.MessageCallback {
 
 		switch (inputSplit) {
 			case "new_worker_process":
-				runProcessFromString(mess);
+				//runProcessFromString(mess);
+				launchNewJob(mess.split(" ")[1]);
 				break;
 			case "remove_worker_process":
 				if (!workerProcessMonitorThread.removeProcess(mess)) {
@@ -93,15 +94,16 @@ public class Worker implements SocketServer1To1.MessageCallback {
 
 	}
 
+	private static void launchNewJob(String jobId) {
+		System.out.println(TAG+" starting job "+jobId);
+	}
+
 	static void runProcessFromString(String s) {
 		try
 		{
 			String jobId = s.split(" ")[1];
-			int freqCountK = Integer.parseInt(s.split(" ")[2]);
-			String streamServerHostname = s.split(" ")[3];
-			int streamServerPort = Integer.parseInt(s.split(" ")[4]);
 
-			Process p = runProcess(jobId, freqCountK, streamServerHostname, streamServerPort);
+			Process p = runProcess(jobId);
 
 			if (p!= null) {
 				workerProcessMonitorThread.addProcess(s, p);
@@ -117,9 +119,9 @@ public class Worker implements SocketServer1To1.MessageCallback {
 		}
 	}
 
-	private static Process runProcess(String jobId, int freqCountK, String streamServerHostname, int streamServerPort) throws Exception {
+	private static Process runProcess(String jobId) throws Exception {
 		Path currentAbsolutePath = Paths.get("").toAbsolutePath();
-		String command = "java com.forbessmith.kit318_assignment04.worker.WorkerProcess "+jobId+" "+freqCountK+" "+streamServerHostname+" "+streamServerPort;
+		String command = "java com.forbessmith.kit318_assignment04.worker.WorkerProcess "+jobId;
 		System.out.println("RUN NEW [WorkerProcess] - "+command);
 		Process pro = Runtime.getRuntime().exec(command);
 
@@ -153,7 +155,7 @@ public class Worker implements SocketServer1To1.MessageCallback {
 			}
 
 			if (lineSplit.equals("result_listening_port")) {
-				sendWorkerProcessPortToMaster(line);
+				sendMessageToMaster(line);
 
 				break;
 			} else {
@@ -162,7 +164,7 @@ public class Worker implements SocketServer1To1.MessageCallback {
 		}
 	}
 
-	private static void sendWorkerProcessPortToMaster(String message) {
+	private static void sendMessageToMaster(String message) {
 		if (masterSocketServer.isConnected())
 			masterSocketServer.sendMessage(message);
 		else {

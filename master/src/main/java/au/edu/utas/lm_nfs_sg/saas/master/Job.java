@@ -1,45 +1,113 @@
 package au.edu.utas.lm_nfs_sg.saas.master;
 
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+
+import java.io.File;
 import java.text.DateFormat;
-import java.util.Calendar;
+import java.util.*;
 
 
-class Job {
+public class Job {
 	enum Status {
 		INACTIVE, ACTIVE, INITIATING, MIGRATING, ERROR, UNREACHABLE, FINISHED
 	}
 
-	private String id;
-	private Status status = Status.INACTIVE;
+	public final static Map<Class<? extends Job>, String> jobTypes = new HashMap<Class<? extends Job>, String>();
 
-	private String jobParametersJSON;
+	static {
+		jobTypes.put(SparkJob.class, "CSIRO Spark");
+		jobTypes.put(FreqCountJob.class, "Freq Count Stream");
+	}
 
-	private String streamHostname;
-	private int streamPort;
-	private int kFreqWords;
+	protected String id;
+	private Class<? extends Job> jobClass;
+	private String jobType;
+	private String jobImageId;
+	private Boolean jobRequiresOwnWorker;
 
-	private MasterWorkerThread worker;
-	private int workerProcessPort;
+	private String jobDescription;
+
+	String jobParamsJsonString;
+	ArrayList<String> jobResourcesUrls;
+	private File jobParamsDirectory;
+	private File jobResourcesDirectory;
 
 	private Calendar startTime;
 	private Calendar endTime;
 	private Long cpuTimeMs;
 
-	private String results;
-	private Boolean currentlyRetrievingResults = false;
-
+	private Status status = Status.INACTIVE;
 	private StatusChangeListener statusChangeListener;
 
-	Job(String i, String sh, int sp, int k) {
+	private MasterWorkerThread worker;
+
+	Job(String i) {
 		id = i;
-		streamHostname = sh;
-		streamPort = sp;
-		kFreqWords = k;
+
+		jobType = this.getClass().toString();
+		jobClass = this.getClass();
+
+		jobImageId = "26e87817-068b-4221-85a6-e5658aaa12a3";
+		jobRequiresOwnWorker = false;
+
+		jobResourcesDirectory = new File("job/"+id+"/res");
+		jobResourcesDirectory.mkdirs();
+
+		jobParamsDirectory = new File("job/"+id+"/params");
+		jobParamsDirectory.mkdirs();
 	}
 
-	String getId() {
+	public String getJobImageId () {return jobImageId;}
+	protected void setJobImageId(String imageId) {
+		jobImageId = imageId;
+	}
+
+	public Boolean getJobRequiresOwnWorker () {return jobRequiresOwnWorker;}
+	protected void setJobRequiresOwnWorker(Boolean requiresOwnWorker) {
+		jobRequiresOwnWorker = requiresOwnWorker;
+	}
+
+	void setJobParamsJsonString(String params) {
+		jobParamsJsonString = params;
+	}
+
+	protected String getJobParamsJsonString () {
+		if (jobParamsJsonString != null) {
+			return jobParamsJsonString;
+		}
+		return "";
+	}
+
+	JSONObject processJobResourcesDir() {
+		return null;
+	}
+
+	protected JSONArray getJobResourcesDirFilenames() {
+		JSONArray uploadedFilenames = new JSONArray();
+
+		for (File file : getJobResourcesDirectory().listFiles()) {
+			if (file.isFile()) {
+				uploadedFilenames.add("./" + file.getName());
+			}
+		}
+
+		return uploadedFilenames;
+	}
+
+	public File getJobResourcesDirectory() {
+		return jobResourcesDirectory;
+	}
+
+	public File getJobParamsDirectory() {
+		return jobParamsDirectory;
+	}
+
+	public String getId() {
 		return id;
 	}
+
+	public String getJobType () { return jobType; }
 
 	Status getStatus() {return status;}
 	String getStatusString() {
@@ -54,31 +122,12 @@ class Job {
 		statusChangeListener = listener;
 	}
 
-	int getkFreqWords() {
-		return kFreqWords;
-	}
-
-	String getStreamHostname() {
-		return streamHostname;
-	}
-
-	int getStreamPort() {
-		return streamPort;
-	}
-
 	void setWorkerProcess(MasterWorkerThread w) {
 		worker = w;
 	}
 
 	MasterWorkerThread getWorker() {
 		return worker;
-	}
-
-	int getWorkerProcessPort() {
-		return workerProcessPort;
-	}
-	void setWorkerProcessPort(int p) {
-		workerProcessPort = p;
 	}
 
 	void setStartCpuTime() {startTime = Calendar.getInstance();}
@@ -90,31 +139,12 @@ class Job {
 		return cpuTimeMs;
 	}
 
-	String getBill() {
-		return "Start time: "+DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM).format(startTime.getTime())
-				+"\nEnd time: "+DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM).format(endTime.getTime())
-				+"\nTime used: "+getCpuTimeMs()+" Milliseconds"
-				+"\n\nAmount Due: $"+String.format("%.2f", (cpuTimeMs/1000)*.01)+" ($0.01 per second)";
-	}
-
-	void resetResults() {results = null;}
-	void setResults(String r) {results = r;}
-	void addResults(String r) {results += "\n"+r;}
-	String getResults(){
-		return results;
-	}
-	String getResultsString() {
-		if (results == null) {
-			return "No results available.";
-		} else if (!currentlyRetrievingResults) {
-			return results;
-		} else {
-			return results+"\nRESULTS STILL BEING RECEIVED \n\n Refresh the page for more results";
+	String getStartTimeString() {
+		if (startTime!=null) {
+			DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM).format(startTime.getTime());
 		}
+		return "";
 	}
-	void setCurrentlyRetrievingResults(Boolean r) {
-		currentlyRetrievingResults = r;}
-	Boolean isCurrentlyRetrievingResults() {return currentlyRetrievingResults;}
 
 	void finishJob() {
 		setEndCpuTime();

@@ -76,7 +76,7 @@ public class JCloudsNova implements Closeable {
 		}
 
 		FlavorApi flavors=novaApi.getFlavorApi("Melbourne");
-		String imageid="26e87817-068b-4221-85a6-e5658aaa12a3";
+		String imageid = "26e87817-068b-4221-85a6-e5658aaa12a3";
 
 		//System.out.println("\n\n\n flavour name");
 		String flavorid="0";

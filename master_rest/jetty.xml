@@ -34,4 +34,9 @@
         <Arg>org.eclipse.jetty.server.webapp.containerIncludeJarPattern</Arg>
         <Arg>^$</Arg>
     </Call>
+
+    <Call name="setProperty" class="java.lang.System">
+        <Arg>org.eclipse.jetty.annotations.maxWait</Arg>
+        <Arg>120</Arg>
+    </Call>
 </Configure>

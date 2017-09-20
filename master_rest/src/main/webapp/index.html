@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="SaaS">
+    <title>SaaS</title>
+
+    <link rel="stylesheet" href='css/brutusin-json-forms.min.css'/>
+    <link rel="stylesheet" href="css/dropzone.min.css">
+
+
+    <!--START PURE CSS RESOURCES-->
+    <link rel="stylesheet" href="css/pure-min.css">
+    <!--[if lte IE 8]>
+    <link rel="stylesheet" href="css/side-menu-old-ie.css">
+    <![endif]-->
+    <!--[if gt IE 8]><!-->
+    <link rel="stylesheet" href="css/side-menu.css">
+    <!--<![endif]-->
+    <!--[if lt IE 9]>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7/html5shiv.js"></script>
+    <![endif]-->
+    <!--END PURE CSS RESOURCES-->
+
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+
+<div id="layout">
+    <!-- Menu toggle -->
+    <a href="#menu" id="menuLink" class="menu-link">
+        <!-- Hamburger icon -->
+        <span></span>
+    </a>
+
+    <div id="menu-hor" class="pure-menu pure-menu-horizontal primary_col_top_border">
+        <ul class="pure-menu-list">
+            <li class="pure-menu-item"><a href="#settings" class="pure-menu-link">Account Settings</a></li>
+            <li class="pure-menu-item"><a href="#help" class="pure-menu-link">Help</a></li>
+            <li class="pure-menu-item"><a href="#logout" class="pure-menu-link">Log Out</a></li>
+        </ul>
+    </div>
+
+    <div id="menu" class="primary_col_top_border">
+        <div class="pure-menu">
+            <a class="pure-menu-heading" href="#">SaaS</a>
+
+            <ul class="pure-menu-list">
+                <li class="pure-menu-item"><a href="#new-job" class="pure-menu-link">New Job</a></li>
+                <li class="pure-menu-item" class="menu-item-divided">
+                    <a href="#active-jobs" class="pure-menu-link pure-menu-selected">Active Jobs</a></li>
+
+                <li class="pure-menu-item">
+                    <a href="#inactive-jobs" class="pure-menu-link">Inactive Jobs</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div id="main">
+        <p>
+        <div id="app">
+            <div id="job-table" class="fadein" style="display: none;">        
+                <p>
+                <div id="main-header">
+                    <a class="pure-button primary_col_bg" href="#">Add New Job</a>
+        
+                </div>  
+                <p>
+                <div class="ui container">
+                    <div id="active-job-table" class="pure-table pure-table-striped fadein">
+                            <vuetable ref="vuetableActiveJobTable"
+                                :api-url="activeApiUrl"
+                                :fields="activeFields" 
+                                pagination-info-no-data-template="No jobs to list">
+                                <template slot="actions" scope="props">
+                                    <div class="td-buttons">
+                                        <button class="pure-button error_col_bg" @click="stopJobClick(props.rowData)"><i class="fa fa-delete"></i> Stop</button>
+                                    </div>
+                                </template>
+                            </vuetable>
+
+                            
+                            <!--<vuetable-pagination ref="pagination"
+                                @vuetable-pagination:change-page="onChangePage">
+                            
+                            </vuetable-pagination>-->
+                        </div>
+
+                        <div id="inactive-job-table" class="pure-table pure-table-striped fadein">
+                                <vuetable ref="vuetableInactiveJobTable"
+                                    :api-url="inactiveApiUrl"
+                                    :fields="inactiveFields" 
+                                    pagination-info-no-data-template="No jobs to list">
+                                    <template slot="actions" scope="props">
+                                        <div class="td-buttons">
+                                            <button class="pure-button primary_col_bg button-float-left" @click="launchJobClick(props.rowData)"><i class="fa fa-launch"></i> Launch</button>
+                                            <button class="pure-button" @click="editJobClick(props.rowData)"><i class="fa fa-edit"></i> Edit</button>
+                                            <button class="pure-button error_col_bg" @click="deleteJobClick(props.rowData)"><i class="fa fa-delete"></i> Delete</button>
+                                        </div>
+                                    </template>
+                                </vuetable>
+                                
+                                <!--<vuetable-pagination ref="pagination"
+                                    @vuetable-pagination:change-page="onChangePage">
+                                
+                                </vuetable-pagination>-->
+                        </div>
+
+                        <div id="no-jobs" style="display: none;">No jobs to display</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="job-form" class="fadein" style="display: none;">
+            <div class="header"><h1>New Spark Job</h1></div>
+            <div class="job-info" id="job-info"></div>
+            <div id="job-form-upload" class="dropzone">
+                <p>
+                <div class="fallback">
+                <form id="jobFormUploadFallback" action="" enctype="multipart/form-data" method="post">
+                    
+                        <label>Select multiple files...</label><input type= "file" name="files" multiple /> <br/><br/>
+                        <input type="submit" title="Save"/>
+                    
+                </form>
+                </div>
+            </div>
+            <div id="job-form-container"></div>
+            <p class="job-submit">
+                    <a class="pure-button error_col_bg button-float-left button-xlarge" href="" onclick="return false;" id="job-form-discard-btn">Discard Job</a>
+                <a class="pure-button primary_col_border button-xlarge" href="" onclick="return false;" id="job-form-submit-btn">Save Job</a>
+                <a class="pure-button primary_col_bg button-xlarge" href="" onclick="return false;" id="job-form-launch-btn">Save & Launch Job</a>
+        </div>
+    </div>
+</div>
+
+<script src="js/brutusin-json-forms.js"></script>
+<script src="js/dropzone.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.2.6/vue.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.16.1/axios.min.js"></script>
+<script src="https://unpkg.com/vuetable-2@1.6.0"></script>
+
+<script src="index.js"></script>
+
+</body>
+</html>

@@ -50,5 +50,6 @@ temp/
 out/
 build/
 .idea/
+master_rest/job/
 
 master/src/main/resources/nectarcloud_config.json

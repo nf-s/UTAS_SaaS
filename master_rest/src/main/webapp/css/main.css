@@ -1,0 +1,317 @@
+.main-table, .vuetable{
+    width: 100%;
+    font-size: 85%;
+}
+
+body {
+    padding:0;
+    margin:0;
+    background: #fff;
+}
+
+#main {
+padding:10px;
+}
+
+#main-header{
+    text-align: right;
+}
+
+.primary_col {
+    color:#00d6ac !important;
+}
+
+.primary_col_top_border {
+    border-top: #00d6ac 4px solid !important;
+}
+
+.primary_col_bg {
+    background-color:#00d6ac !important;
+    color:#fff !important;
+}
+
+.primary_col_border {
+    color:#00d6ac !important;
+    border: #00d6ac 2px solid !important;
+    background-color:#ffffff !important;
+    -webkit-box-sizing: border-box; /* Safari/Chrome, other WebKit */
+    -moz-box-sizing: border-box;    /* Firefox, other Gecko */
+    box-sizing: border-box;         /* Opera/IE 8+ */
+}
+
+.error_col_bg {
+    background-color:#D6002A !important;
+    color:#fff !important;
+}
+
+.error_col_border {
+    color:#D6002A !important;
+    border: #D6002A 2px solid !important;
+    background-color:#ffffff !important;
+    -webkit-box-sizing: border-box; /* Safari/Chrome, other WebKit */
+    -moz-box-sizing: border-box;    /* Firefox, other Gecko */
+    box-sizing: border-box;         /* Opera/IE 8+ */
+}
+
+
+/* START NAV/MENU */
+.pure-menu-horizontal {
+    background: #373641;
+    font-size: 100%;
+    width: 100%;
+    white-space: nowrap;
+    text-align: right;
+}
+
+#menu-hor .pure-menu-link {
+    padding: 10px 10px;
+    color: #fff;
+}
+
+#menu-hor .pure-menu-link:hover {
+    background-color: #222129;
+}
+/* END NAV/MENU */
+
+/* START BUTTON */
+.pure-button {
+    border-radius: 3px;
+    color: rgb(255, 255, 255);
+    background-color: #373641;
+}
+
+.pure-button-hover, .pure-button:hover {
+    background-image: "";
+    -webkit-filter: brightness(85%);
+    -moz-filter: brightness(85%);
+    -o-filter: brightness(85%);
+    -ms-filter: brightness(85%);
+}
+
+.button-success,
+.button-error,
+.button-warning,
+.button-secondary {
+    color: white;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+}
+
+.button-success {
+    background: rgb(28, 184, 65); /* this is a green */
+}
+
+.button-error {
+    background: rgb(202, 60, 60); /* this is a maroon */
+}
+
+.button-warning {
+    background: rgb(223, 117, 20); /* this is an orange */
+}
+
+.button-secondary {
+    background: rgb(66, 184, 221); /* this is a light blue */
+}
+
+.button-xsmall {
+    font-size: 70%;
+}
+
+.button-small {
+    font-size: 85%;
+}
+
+.button-large {
+    font-size: 110%;
+}
+
+.button-xlarge {
+    font-size: 125%;
+}
+
+.button-float-left {
+    float: left;
+}
+
+/* END BUTTON */
+    
+/* START JOB TABLE */
+.pure-table-odd td, .pure-table-striped tr:nth-child(2n-1) td {
+    background-color: #f7f7f7;
+}
+
+.td-buttons {
+    text-align: right;
+}
+/* END JOB TABLE */
+
+/* START JOB FORM */
+
+/* for group forms...
+form.brutusin-form td.prop-name{
+    text-align: left !important;
+    padding-left: 10px;
+}
+
+form.brutusin-form td.prop-value, .pure-form input[type=password], .pure-form input[type=email], .pure-form input[type=url], .pure-form input[type=date], .pure-form input[type=month], .pure-form input[type=time], .pure-form input[type=datetime], .pure-form input[type=datetime-local], .pure-form input[type=week], .pure-form input[type=tel], .pure-form input[type=color], .pure-form input[type=number], .pure-form input[type=search], .pure-form input[type=text], .pure-form select, .pure-form textarea {
+    width: 600px !important;
+    font-size: 14px;
+    text-align: left !important;
+}
+*/
+
+form.brutusin-form {
+    /*max-width: 1000px;*/
+}
+
+form.brutusin-form td.prop-name {
+    text-align: left;
+}
+
+form.brutusin-form td {
+    vertical-align: middle;
+}
+
+td.form_title_input {
+    padding-top: 20px !important;
+    visibility: hidden;
+}
+
+td.form_title_label {
+    padding-top: 25px !important;
+    position: absolute;
+    font-size: 22px !important;
+    font-weight: bold;
+    text-align: left;
+}
+
+tr.pure-control-group {
+    white-space: nowrap;
+    max-width: 100%;
+}
+
+textarea.code_text_area {
+    font-family: "Consolas","Courier New", Courier, monospace
+}
+
+textarea.code_text_area::-webkit-input-placeholder { /* WebKit, Blink, Edge */
+    color:    #fff;
+}
+textarea.code_text_area:-moz-placeholder { /* Mozilla Firefox 4 to 18 */
+   color:     #fff;
+   opacity:  1;
+}
+textarea.code_text_area::-moz-placeholder { /* Mozilla Firefox 19+ */
+   color:    #fff;
+   opacity:  1;
+}
+textarea.code_text_area:-ms-input-placeholder { /* Internet Explorer 10-11 */
+   color:    #fff;
+}
+textarea.code_text_area::-ms-input-placeholder { /* Microsoft Edge */
+   color:    #fff;
+}
+
+p.job-submit {
+    text-align: right;
+}
+
+span.legend_description {
+    color: #afafaf;
+    font-size: 85%;
+}
+/* END JOB FORM */
+
+/* JOB DROPZONE */
+
+#job-form-upload {
+    background: rgb(249, 249, 249);
+    padding: .5em .6em;
+    border: 1px solid #ccc;
+    box-shadow: inset 0 1px 3px #ddd;
+    border-radius: 4px;
+    vertical-align: middle;
+    box-sizing: border-box;
+}
+
+.dropzone .dz-preview.dz-file-preview .dz-image {
+    border-radius: 4px;
+    background: #DFDFDF;
+}
+
+.dz-success .dz-image   {
+    background-color:#00d6ac !important;
+    color:#fff !important;
+}
+
+.dz-success .dz-details {
+    color:#fff !important;
+}
+
+.dz-success .dz-details .dz-filename:hover span {
+    border-radius: 4px !important;
+    border: 1px solid rgba(0, 0, 0, 0.8) !important;
+    background-color: rgba(0, 0, 0, 0.6) !important;
+}
+
+.dropzone .dz-preview .dz-details .dz-filename span, .dropzone .dz-preview .dz-details .dz-size span {
+    background: none;
+    padding: 0 0.4em;
+    border-radius: 0px;
+}
+
+/* Smartphones -----------
+(from https://stackoverflow.com/questions/3514784/what-is-the-best-way-to-detect-a-mobile-device-in-jquery)
+*/
+@media only screen and (max-width: 500px) {
+    td.prop-name {
+        max-width: 200px;
+        white-space: nowrap;
+        overflow: scroll;
+        text-overflow: ellipsis;
+    }
+
+    td.form_title_label {
+        max-width: 100%;
+        overflow: scroll;
+    }
+  }
+
+/* FADE IN ELEMENT */
+/* https://stackoverflow.com/questions/11679567/using-css-for-fade-in-effect-on-page-load */
+.fadein {
+    -webkit-animation: fadein 1s; /* Safari, Chrome and Opera > 12.1 */
+       -moz-animation: fadein 1s; /* Firefox < 16 */
+        -ms-animation: fadein 1s; /* Internet Explorer */
+         -o-animation: fadein 1s; /* Opera < 12.1 */
+            animation: fadein 1s;
+}
+
+@keyframes fadein {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+/* Firefox < 16 */
+@-moz-keyframes fadein {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+/* Safari, Chrome and Opera > 12.1 */
+@-webkit-keyframes fadein {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+/* Internet Explorer */
+@-ms-keyframes fadein {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+/* Opera < 12.1 */
+@-o-keyframes fadein {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
