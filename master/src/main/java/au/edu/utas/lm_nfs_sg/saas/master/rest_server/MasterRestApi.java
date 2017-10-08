@@ -1,4 +1,4 @@
-package au.edu.utas.lm_nfs_sg.saas.master_rest;
+package au.edu.utas.lm_nfs_sg.saas.master.rest_server;
 
 import au.edu.utas.lm_nfs_sg.saas.master.Master;
 import org.glassfish.jersey.server.ResourceConfig;
@@ -6,15 +6,17 @@ import org.glassfish.jersey.media.multipart.MultiPartFeature;
 
 import javax.ws.rs.ApplicationPath;
 
-@ApplicationPath("test")
-public class TestWebApp extends ResourceConfig {
+@ApplicationPath("api")
+public class MasterRestApi extends ResourceConfig {
 
-	public TestWebApp() {
+	public MasterRestApi() {
 		// Resources.
 		register(MultiPartFeature.class);
 
 		register(DefaultMethodResource.class);
-		register(JobResource.class);
+
+		register(ClientJobResource.class);
+		register(WorkerJobResource.class);
 
 		Master.init();
 	}

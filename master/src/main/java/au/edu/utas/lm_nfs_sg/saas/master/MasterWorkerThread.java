@@ -1,14 +1,9 @@
 package au.edu.utas.lm_nfs_sg.saas.master;
 
 import au.edu.utas.lm_nfs_sg.saas.comms.SocketClient;
-import au.edu.utas.lm_nfs_sg.saas.comms.SocketServer1To1;
-import au.edu.utas.lm_nfs_sg.saas.comms.SocketCommunication;
 
 import java.io.IOException;
-import java.text.DateFormat;
 import java.util.Calendar;
-import java.util.Iterator;
-import java.util.Map;
 import java.util.UUID;
 
 public class MasterWorkerThread implements Runnable, SocketClient.MessageCallback {
@@ -223,20 +218,7 @@ public class MasterWorkerThread implements Runnable, SocketClient.MessageCallbac
 
 		switch (messageCommand) {
 			case "ready":
-				System.out.println(getTag()+" worker ready");
-				break;
-
-			case "job_started":
-				System.out.println(getTag()+" job started job= "+message.split(" ")[1]);
-				available=true;
-				break;
-
-			case "job_not_started":
-				// add master to reassign job
-				break;
-
-			case "work_process_failed":
-				System.out.println(getTag()+" work_process_failed job= "+message.split(" ")[1]);
+				System.out.println(getTag()+" Worker Available");
 				break;
 		}
 	}
@@ -248,39 +230,28 @@ public class MasterWorkerThread implements Runnable, SocketClient.MessageCallbac
 	/**
 	 *  Creates a new job - sends command to worker
 	 */
-	synchronized void createNewJob(Job job) {
-		System.out.println(getTag()+" Create new job "+job.getId());
-		workerSocketClient.sendMessage("new_worker_process "+job.getId());
-		available=true;
+	synchronized void assignJob(Job job) {
+		System.out.println(getTag()+" Assigning job "+job.getId());
+		workerSocketClient.sendMessage("new_job "+job.getId());
+		//available=true;
 
 		numJobsRunning ++;
 	}
 
 	/**
-	 *  Connects to job worker process - asks to finish job
-	 *  When job is finished the connection is killed
+	 *  Connects to worker - asks to delete job
 	 */
-	void finishJob(Job job) {
-		job.setStatus(Job.Status.INACTIVE);
-		/*
-		if (job.getStatus() == Job.Status.ACTIVE) {
-			final SocketClient workerProcessSocketClient = new SocketClient(getTag()+" [WorkerProcessClient]",workerHostname, jobPort);
+	void deleteJob(Job job) {
+		job.setStatus(Job.Status.STOPPING);
+		workerSocketClient.sendMessage("delete_job "+job.getId());
+	}
 
-			workerProcessSocketClient.setOnMessageReceivedListener( message -> {
-				System.out.println(getTag() + " received " + message);
-				workerProcessSocketClient.stopRunning();
-				workerProcessSocketClient.closeSocket();
-
-				numJobsRunning --;
-				available=true;
-			});
-
-			new Thread(workerProcessSocketClient).start();
-			workerProcessSocketClient.sendMessage("finish_job");
-		} else {
-			System.out.println(getTag()+" job "+job.getId()+" is not active");
-		}
-		*/
+	/**
+	 *  Connects to worker - asks to finish job
+	 */
+	void stopJob(Job job) {
+		job.setStatus(Job.Status.STOPPING);
+		workerSocketClient.sendMessage("stop_job "+job.getId());
 	}
 
 	// ------------------------------------------------------------------------

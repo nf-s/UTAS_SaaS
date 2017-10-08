@@ -8,7 +8,7 @@
         }
     },
     "properties": {
-        "!formheader! 1": {
+        "formheader_1": {
             "type": "string",
             "title": "Simulation options",
             "formHeader": true
@@ -31,7 +31,7 @@
             "format": "text",             
             "stylesheetClass": "code_text_area"
         },
-        "!formheader! 2": {
+        "formheader_2": {
             "type": "string",
             "title": "Output options",
             "formHeader": true
@@ -45,7 +45,7 @@
         "Output isochrone time": {
             "type": "string"
         },
-        "!formheader! 3": {
+        "formheader_3": {
             "type": "string",
             "title": "Gridded input data sets - these can be any GDAL compatible type",
             "formHeader": true
@@ -107,7 +107,7 @@
         "Gridded/Layer projection WKT": {
             "type": "string"
         },
-        "!formheader! 4": {
+        "formheader_4": {
             "type": "string",
             "title": "Custom layers",
             "formHeader": true
@@ -142,7 +142,7 @@
         "Custom/Layer default 5": {
             "type": "string"
         },
-        "!formheader! 5": {
+        "formheader_5": {
             "type": "string",
             "title": "Series input data sets - must be a CSV file",
             "formHeader": true
@@ -156,7 +156,7 @@
             "format": "text",             
             "stylesheetClass": "code_text_area"
         },
-        "!formheader! 6": {
+        "formheader_6": {
             "type": "string",
             "title": "Rate of spread models - in C code",
             "formHeader": true
@@ -191,18 +191,21 @@
             "format": "text",             
             "stylesheetClass": "code_text_area"
         },
-        "!formheader! 7": {
+        "Start point script": {
+            "type": "string",
+            "format": "text",             
+            "stylesheetClass": "code_text_area"
+        },
+
+        "formheader_7": {
             "type": "string",
             "title": "Input options",
             "formHeader": true
         },
-        "Start point script": {
-            "type": "Start point script"
-        },
         "Shape file input source": {
             "$ref": "#/definitions/uploadedfiles"
         },
-        "!formheader! 8": {
+        "formheader_8": {
             "type": "string",
             "title": "Initialisation model - in C code with an optional Python script to generate C code",
             "formHeader": true
@@ -225,7 +228,7 @@
             "format": "text",             
             "stylesheetClass": "code_text_area"
         },
-        "!formheader! 9": {
+        "formheader_9": {
             "type": "string",
             "title": "Web map options",
             "formHeader": true

@@ -3,5 +3,3 @@ include 'master'
 include 'worker'
 include 'comms'
 include 'rest'
-include 'master_rest'
-

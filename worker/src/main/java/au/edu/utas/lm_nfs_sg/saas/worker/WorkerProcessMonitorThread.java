@@ -61,7 +61,7 @@ public class WorkerProcessMonitorThread implements Runnable{
 
 		for (Integer index:removeIndexes) {
 			String command = processCommands.get(index);
-			Worker.runProcessFromString(processCommands.get(index));
+			//Worker.runProcessFromString(processCommands.get(index));
 			System.out.println(TAG+ " process successfully restarted - " + command);
 
 			processCommands.remove((int)index);

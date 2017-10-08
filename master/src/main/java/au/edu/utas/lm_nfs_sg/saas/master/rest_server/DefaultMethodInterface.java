@@ -1,4 +1,4 @@
-package au.edu.utas.lm_nfs_sg.saas.master_rest;
+package au.edu.utas.lm_nfs_sg.saas.master.rest_server;
 
 
 import javax.ws.rs.GET;

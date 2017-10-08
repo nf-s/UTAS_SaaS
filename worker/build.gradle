@@ -21,4 +21,23 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.11'
 
     compile project(':comms')
+
+    compile 'javax.annotation:javax.annotation-api:1.2'
+
+    compile 'org.glassfish.jersey.inject:jersey-hk2:2.26'
+    compile 'org.glassfish.jersey.core:jersey-client:2.26'
+    compile 'org.glassfish.jersey.media:jersey-media-multipart:2.26'
+
+    compile 'org.glassfish.jersey.media:jersey-media-moxy:2.26'
+
+
+
+    // https://mvnrepository.com/artifact/com.googlecode.json-simple/json-simple
+    compile 'com.google.code.gson:gson:2.8.2'
 }
+
+// ____ WORKER NOTES
+// Must only use Java 8  (NOT 9)
+
+// To check/change version
+// On ubuntu: sudo update-alternatives --config java

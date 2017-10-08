@@ -1,16 +1,19 @@
 package au.edu.utas.lm_nfs_sg.saas.master;
 
 import com.google.common.io.Closeables;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.apache.commons.io.IOUtils;
+import org.glassfish.jersey.server.JSONP;
 import org.jclouds.ContextBuilder;
+import org.jclouds.json.Json;
 import org.jclouds.openstack.nova.v2_0.NovaApi;
 import org.jclouds.openstack.nova.v2_0.domain.Flavor;
 import org.jclouds.openstack.nova.v2_0.domain.ServerCreated;
 import org.jclouds.openstack.nova.v2_0.features.FlavorApi;
 import org.jclouds.openstack.nova.v2_0.features.ServerApi;
 import org.jclouds.openstack.nova.v2_0.options.CreateServerOptions;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
 
 import java.io.Closeable;
 import java.io.FileReader;
@@ -27,7 +30,7 @@ public class JCloudsNova implements Closeable {
     private int serverNumVCpus;
 
 	JCloudsNova() {
-		JSONParser parser = new JSONParser();
+		JsonParser parser = new JsonParser();
 		String osTenantName, osUsername, credential;
 		osTenantName = osUsername = credential = null;
  
@@ -35,11 +38,11 @@ public class JCloudsNova implements Closeable {
 			StringWriter writer = new StringWriter();
 			IOUtils.copy(ClassLoader.getSystemClassLoader().getResourceAsStream("nectarcloud_config.json"), writer);
 
-            JSONObject jsonObject = (JSONObject) parser.parse(writer.toString());
+			JsonObject jsonObject = parser.parse(writer.toString()).getAsJsonObject();
 
-			osTenantName = (String) jsonObject.get("osTenantName");
-			osUsername = (String) jsonObject.get("osUsername");
-			credential = (String) jsonObject.get("credential");
+			osTenantName = jsonObject.get("osTenantName").getAsString();
+			osUsername = jsonObject.get("osUsername").getAsString();
+			credential = jsonObject.get("credential").getAsString();
  
         } catch (Exception e) {
             e.printStackTrace();
@@ -92,8 +95,8 @@ public class JCloudsNova implements Closeable {
 		}
 
 		String userdata="#!/bin/bash \n  sudo su ubuntu \n "+
-				"cd /home/ubuntu/as04 \n "+
-				"java com.forbessmith.kit318_assignment04.worker.Worker 1234 \n ";
+				"cd /home/ubuntu/saas \n "+
+				"java -jar ./worker-1.0-all.jar 130.56.249.67 \n ";
 
 		CreateServerOptions options1= CreateServerOptions.Builder.keyPairName("KIT318")
 				.securityGroupNames("open").userData(userdata.getBytes());

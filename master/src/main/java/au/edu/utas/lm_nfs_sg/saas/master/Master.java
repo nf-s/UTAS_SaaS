@@ -2,8 +2,8 @@ package au.edu.utas.lm_nfs_sg.saas.master;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 
 import java.io.File;
 import java.util.*;
@@ -12,6 +12,10 @@ import java.util.*;
  * Created by nico on 25/05/2017.
  */
 public final class Master {
+	//================================================================================
+	// Properties
+	//================================================================================
+
 	public static final String  TAG = "<Master>";
 
 	private static LinkedList<Job> queuedJobs;
@@ -30,18 +34,17 @@ public final class Master {
 		return "testsetset";
 	}
 
-	 static  {
+	static {
 		queuedJobs = new LinkedList<Job>();
 
-		 activeSharedWorkers = new LinkedList<MasterWorkerThread>();
-		 activeJobWorkers = new LinkedList<MasterWorkerThread>();
+		activeSharedWorkers = new LinkedList<MasterWorkerThread>();
+		activeJobWorkers = new LinkedList<MasterWorkerThread>();
 	}
 
 	public static void init(){
 		if (!initiated) {
 			initiated=true;
-			activeJobWorkers.add(new MasterWorkerThread("localhost", 1234, true));
-
+			activeJobWorkers.add(new MasterWorkerThread("localhost", 8082, true));
 		}
 	}
 
@@ -84,24 +87,67 @@ public final class Master {
 		*/
 	}
 
-	public static String getInactiveJobParamsJsonString(String jobId) {
-		Job job = getInactiveJob(jobId);
+	//================================================================================
+	// Job REST "Accessors"
+	//================================================================================
+
+	public static boolean updateJobStatus(String jobId, String jobStatus) {
+		Job job = getJob(jobId);
 		if (job!=null) {
-			return job.getJobParamsJsonString();
+			try {
+				job.setStatus(Job.Status.valueOf(jobStatus));
+				return true;
+			} catch (IllegalArgumentException e) {
+				System.out.println(TAG+" Illegal Argument Exception - Setting job status to "+jobStatus+" - jobId="+jobId);
+			}
+		}
+		return false;
+	}
+
+	public static File getJobConfigFile(String jobId) {
+		Job job = getJob(jobId);
+		if (job!=null) {
+			return job.getJobConfigFile();
+		}
+		return null;
+	}
+
+	public static String getJobConfigJsonString(String jobId) {
+		Job job = getJob(jobId);
+		if (job!=null) {
+			return job.getJobConfigJsonString();
 		}
 		return "";
 	}
 
-	public static boolean setInactiveJobParamsJsonString(String jobId, String jsonString) {
-		Job job = getInactiveJob(jobId);
+	public static boolean updateJobConfig(String jobId, String jsonString) {
+		Job job = getJob(jobId);
 		if (job!=null) {
-			job.setJobParamsJsonString(jsonString);
+			job.setJobConfigJsonString(jsonString);
 			return true;
 		}
 		return false;
 	}
 
-	public static JSONObject processInactiveJobResourcesDir(String jobId) {
+	// Get Job Resources Directory - which contains all files required for job execution
+	public static File getJobResourcesDir(String jobId) {
+		Job job = getJob(jobId);
+		if (job!=null) {
+			return job.getJobResourcesDirectory();
+		}
+		return null;
+	}
+
+	// Get Job Results Directory - which contains all files uploaded from worker after execution
+	public static File getJobResultsDir(String jobId) {
+		Job job = getJob(jobId);
+		if (job!=null) {
+			return job.getJobResultsDirectory();
+		}
+		return null;
+	}
+
+	public static JsonObject processInactiveJobResourcesDir(String jobId) {
 		Job job = getInactiveJob(jobId);
 		if (job!=null) {
 			return job.processJobResourcesDir();
@@ -109,46 +155,73 @@ public final class Master {
 		return null;
 	}
 
-	public static JSONArray getInactiveJobResourcesDirFilenames(String jobId) {
-		Job job = getInactiveJob(jobId);
-		if (job!=null) {
-			return job.getJobResourcesDirFilenames();
-		}
-		return null;
+	// Get list of jobs in JSON
+	public static JsonArray getActiveJobsListJSON() {
+		return getJobsListJSON(activeJobs);
 	}
-
-	public static File getInactiveJobResourcesDir(String jobId) {
-		Job job = getInactiveJob(jobId);
-		if (job!=null) {
-			return job.getJobResourcesDirectory();
-		}
-		return null;
+	public static JsonArray getInactiveJobsListJSON() {
+		return getJobsListJSON(inactiveJobs);
 	}
-
-	public static JSONArray getActiveJobsJSON() {
-		return getJobsJSON(activeJobs);
-	}
-
-	public static JSONArray getInactiveJobsJSON() {
-		return getJobsJSON(inactiveJobs);
-	}
-
-	private static JSONArray getJobsJSON(Map<String, Job> jobMap) {
+	private static JsonArray getJobsListJSON(Map<String, Job> jobMap) {
 		GsonBuilder gsonB = new GsonBuilder();
 		gsonB.registerTypeAdapter(Job.class, new JobJSONSerializer());
 		Gson gson = gsonB.create();
 
-		JSONArray obj = new JSONArray();
+		JsonArray obj = new JsonArray();
 		jobMap.forEach((jobId,job) -> obj.add(gson.toJsonTree(job, Job.class)));
 
 		return obj;
 	}
 
-	protected static Job getInactiveJob(String jobId) {
+	//================================================================================
+	// Job Functions
+	//================================================================================
+
+	// Get job - using job id
+	private static Job getJob(String jobId) {
+		Job job = getActiveJob(jobId);
+		if (job == null) {
+			job = getInactiveJob(jobId);
+		}
+		return job;
+	}
+
+	private static Job getActiveJob(String jobId) {
+		if (activeJobs.containsKey(jobId)) {
+			return activeJobs.get(jobId);
+		}
+		return null;
+	}
+	private static Job getInactiveJob(String jobId) {
 		if (inactiveJobs.containsKey(jobId)) {
 			return inactiveJobs.get(jobId);
 		}
 		return null;
+	}
+
+	public static Boolean deleteJob(String jobId) {
+		Job job = null;
+		if (activeJobs.containsKey(jobId)) {
+			job = activeJobs.get(jobId);
+			activeJobs.remove(jobId);
+		} else if (inactiveJobs.containsKey(jobId)) {
+			job = inactiveJobs.get(jobId);
+			inactiveJobs.remove(jobId);
+		}
+
+		if (job != null) {
+			MasterWorkerThread worker = job.getWorker();
+			if (worker != null) {
+				worker.deleteJob(job);
+			}
+			// Need to also delete from worker
+			job.deleteJob();
+
+			job = null;
+			return true;
+		}
+
+		return false;
 	}
 
 	public static Job createJob() {
@@ -158,19 +231,17 @@ public final class Master {
 		return newJob;
 	}
 
+
 	public static Boolean initJob(String jobId) {
 		Job job = getInactiveJob(jobId);
 		if (job != null) {
 			inactiveJobs.remove(jobId);
-			if (job.getJobRequiresOwnWorker()) {
+			if (job.getCanRunOnSharedWorker()) {
+				assignJobToMostFreeWorker(job);
 
-
+			} else {
 				startWorkerThread(activeJobWorkers.getFirst());
 				activateJob(job, activeJobWorkers.getFirst());
-
-				//createWorkerForJob(job);
-			} else {
-				assignJobToMostFreeWorker(job);
 			}
 			return true;
 		}
@@ -182,9 +253,10 @@ public final class Master {
 			Job job = activeJobs.get(jobId);
 			activeJobs.remove(jobId);
 			inactiveJobs.put(jobId, job);
-			if (job.getStatus() != Job.Status.FINISHED && job.getCpuTimeMs() == 0) {
+			job.setStatus(Job.Status.STOPPING);
+			if (job.getStatus() != Job.Status.FINISHED && job.getUsedCpuTime() == 0) {
 				if (startWorkerThread(job.getWorker())) {
-					job.getWorker().finishJob(job);
+					job.getWorker().stopJob(job);
 					return true;
 				}
 			}
@@ -192,10 +264,14 @@ public final class Master {
 		return false;
 	}
 
+	//================================================================================
+	// Worker/Assign Job Functions
+	//================================================================================
+
 	private static void createSharedWorker() {
 		creatingNewWorker = true;
 		//MasterWorkerThread newWorker = new MasterWorkerThread(calculateNewWorkerVCpuCount());
-		MasterWorkerThread newWorker = new MasterWorkerThread(2);
+		MasterWorkerThread newWorker = new MasterWorkerThread(1);
 
 		newWorker.setOnStatusChangeListener((worker, currentStatus) -> {
 			// Worker created successfully
@@ -220,7 +296,7 @@ public final class Master {
 		new Thread(newWorker).start();
 	}
 
-
+/*
 	private static void createWorkerForJob(Job job) {
 		//MasterWorkerThread newWorker = new MasterWorkerThread(calculateNewWorkerVCpuCount());
 		MasterWorkerThread newWorker = new MasterWorkerThread(2);
@@ -242,7 +318,7 @@ public final class Master {
 
 		System.out.println(TAG+" begin creating new worker");
 		new Thread(newWorker).start();
-	}
+	}*/
 
 	private static synchronized int calculateNewWorkerVCpuCount() {
 		/*
@@ -409,9 +485,9 @@ public final class Master {
 	private static void activateJob(Job job, MasterWorkerThread worker) {
 		activeJobs.put(job.getId(), job);
 		job.setWorkerProcess(worker);
-		job.setStatus(Job.Status.INITIATING);
+		job.setStatus(Job.Status.ASSIGNING);
 		job.setOnStatusChangeListener((job1, currentStatus) -> {
-			if (currentStatus == Job.Status.ACTIVE) {
+			if (currentStatus == Job.Status.PREPARING) {
 				// Set status listener to Master
 				job.setOnStatusChangeListener((job2, currentStatus1) -> onJobStatusChanged(job2, currentStatus1));
 			} else if (currentStatus == Job.Status.ERROR) {
@@ -419,28 +495,32 @@ public final class Master {
 				System.out.println(job1.id+" could not be launched");
 			}
 		});
-		worker.createNewJob(job);
+		worker.assignJob(job);
 	}
-
 
 	private static void onJobStatusChanged(Job job, Job.Status currentStatus) {
 		switch (currentStatus) {
 			case ERROR:
 				System.out.println(TAG+" job "+job.getId()+" encountered an error");
 				break;
-			case INITIATING:
-				System.out.println(TAG+" job "+job.getId()+" is initiating");
+			case STARTING:
+				System.out.println(TAG+" job "+job.getId()+" is starting");
+				break;
+			case PREPARING:
+				System.out.println(TAG+" job "+job.getId()+" is preparing on worker");
 				break;
 			case UNREACHABLE:
 				System.out.println(TAG+" job "+job.getId()+" is unreachable");
 				break;
-			case ACTIVE:
-				System.out.println(TAG+" job "+job.getId()+" is active");
+			case RUNNING:
+				System.out.println(TAG+" job "+job.getId()+" is running");
 				break;
 			case FINISHED:
 				System.out.println(TAG+" job "+job.getId()+" is finished");
-				System.out.println(TAG+" job "+job.getId()+" cpu time in ms = "+job.getCpuTimeMs());
+				System.out.println(TAG+" job "+job.getId()+" cpu time in ms = "+job.getUsedCpuTime());
 				break;
+			default:
+				System.out.printf(String.format("%s job %s status updated to %s %n", TAG, job.getId(), currentStatus.toString()));
 		}
 	}
 

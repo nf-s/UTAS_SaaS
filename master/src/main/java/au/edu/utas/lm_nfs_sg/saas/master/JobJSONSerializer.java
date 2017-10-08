@@ -8,10 +8,11 @@ public class JobJSONSerializer implements JsonSerializer<Job> {
 	public JsonElement serialize(Job job, Type typeOfSrc, JsonSerializationContext context) {
 		final JsonObject jsonObject = new JsonObject();
 
-		jsonObject.addProperty("type", job.getJobType());
+		jsonObject.addProperty("type", job.getJobClassString());
 		jsonObject.addProperty("id", job.getId());
 		jsonObject.addProperty("status", job.getStatus().toString());
-		jsonObject.addProperty("date-started", job.getStartTimeString());
+		jsonObject.addProperty("date-created", Job.getCalendarString(job.getCreatedDate()));
+		jsonObject.addProperty("running-time", Job.getTimeString(job.getUsedCpuTime()));
 
 		return jsonObject;
 	}

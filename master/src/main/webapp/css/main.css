@@ -1,21 +1,26 @@
-.main-table, .vuetable{
-    width: 100%;
-    font-size: 85%;
-}
+/* ----------------------------------------------------------------------------------
+    GENERIC HTML STYLING
+----------------------------------------------------------------------------------- */
 
 body {
+
     padding:0;
     margin:0;
     background: #fff;
 }
 
 #main {
-padding:10px;
+    padding:10px;
 }
 
 #main-header{
     text-align: right;
 }
+
+
+/* ----------------------------------------------------------------------------------
+    COLORS STYLING
+----------------------------------------------------------------------------------- */
 
 .primary_col {
     color:#00d6ac !important;
@@ -54,7 +59,10 @@ padding:10px;
 }
 
 
-/* START NAV/MENU */
+
+/* ----------------------------------------------------------------------------------
+    NAVIGATION STYLING
+----------------------------------------------------------------------------------- */
 .pure-menu-horizontal {
     background: #373641;
     font-size: 100%;
@@ -71,9 +79,10 @@ padding:10px;
 #menu-hor .pure-menu-link:hover {
     background-color: #222129;
 }
-/* END NAV/MENU */
 
-/* START BUTTON */
+/* ----------------------------------------------------------------------------------
+    BUTTON STYLING
+----------------------------------------------------------------------------------- */
 .pure-button {
     border-radius: 3px;
     color: rgb(255, 255, 255);
@@ -132,9 +141,20 @@ padding:10px;
     float: left;
 }
 
-/* END BUTTON */
+.button-float-right {
+    float: right;
+}
+
     
-/* START JOB TABLE */
+
+/* ----------------------------------------------------------------------------------
+    JOB TABLE STYLING
+----------------------------------------------------------------------------------- */
+.main-table, .vuetable{
+    width: 100%;
+    font-size: 85%;
+}
+
 .pure-table-odd td, .pure-table-striped tr:nth-child(2n-1) td {
     background-color: #f7f7f7;
 }
@@ -142,27 +162,10 @@ padding:10px;
 .td-buttons {
     text-align: right;
 }
-/* END JOB TABLE */
 
-/* START JOB FORM */
-
-/* for group forms...
-form.brutusin-form td.prop-name{
-    text-align: left !important;
-    padding-left: 10px;
-}
-
-form.brutusin-form td.prop-value, .pure-form input[type=password], .pure-form input[type=email], .pure-form input[type=url], .pure-form input[type=date], .pure-form input[type=month], .pure-form input[type=time], .pure-form input[type=datetime], .pure-form input[type=datetime-local], .pure-form input[type=week], .pure-form input[type=tel], .pure-form input[type=color], .pure-form input[type=number], .pure-form input[type=search], .pure-form input[type=text], .pure-form select, .pure-form textarea {
-    width: 600px !important;
-    font-size: 14px;
-    text-align: left !important;
-}
-*/
-
-form.brutusin-form {
-    /*max-width: 1000px;*/
-}
-
+/* ----------------------------------------------------------------------------------
+    JOB FORM STYLING
+----------------------------------------------------------------------------------- */
 form.brutusin-form td.prop-name {
     text-align: left;
 }
@@ -219,9 +222,11 @@ span.legend_description {
     color: #afafaf;
     font-size: 85%;
 }
-/* END JOB FORM */
 
-/* JOB DROPZONE */
+
+/* ----------------------------------------------------------------------------------
+    DROPZONE STYLING
+----------------------------------------------------------------------------------- */
 
 #job-form-upload {
     background: rgb(249, 249, 249);
@@ -230,7 +235,7 @@ span.legend_description {
     box-shadow: inset 0 1px 3px #ddd;
     border-radius: 4px;
     vertical-align: middle;
-    box-sizing: border-box;
+    
 }
 
 .dropzone .dz-preview.dz-file-preview .dz-image {
@@ -259,9 +264,73 @@ span.legend_description {
     border-radius: 0px;
 }
 
-/* Smartphones -----------
-(from https://stackoverflow.com/questions/3514784/what-is-the-best-way-to-detect-a-mobile-device-in-jquery)
-*/
+/* ----------------------------------------------------------------------------------
+    MODAL Styling
+
+    Adapted from: https://vuejs.org/v2/examples/modal.html
+----------------------------------------------------------------------------------- */
+.modal-mask {
+    position: fixed;
+    z-index: 9998;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, .5);
+    display: table;
+    transition: opacity .3s ease;
+  }
+  
+  .modal-wrapper {
+    display: table-cell;
+    vertical-align: middle;
+  }
+  
+  .modal-container {
+    width: 500px;
+    margin: 0px auto;
+    padding: 20px 20px;
+    background-color: #fff;
+    border-radius: 2px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .33);
+    transition: all .3s ease;
+    font-family: Helvetica, Arial, sans-serif;
+  }
+  
+  .modal-header h3 {
+    margin-top: 0;
+    color: #000;
+  }
+  
+  .modal-body {
+    margin: 20px 0px 0px 0px;
+  }
+
+  .modal-footer {
+      padding-top: 15px;
+      text-align: right;
+  }
+    
+  .modal-enter {
+    opacity: 0;
+  }
+  
+  .modal-leave-active {
+    opacity: 0;
+  }
+  
+  .modal-enter .modal-container,
+  .modal-leave-active .modal-container {
+    -webkit-transform: scale(1.1);
+    transform: scale(1.1);
+  }
+
+
+/* ----------------------------------------------------------------------------------
+    MOBILE BROWSER STYLES
+
+    Adapted from: https://stackoverflow.com/questions/3514784/what-is-the-best-way-to-detect-a-mobile-device-in-jquery
+----------------------------------------------------------------------------------- */
 @media only screen and (max-width: 500px) {
     td.prop-name {
         max-width: 200px;
@@ -276,8 +345,11 @@ span.legend_description {
     }
   }
 
-/* FADE IN ELEMENT */
-/* https://stackoverflow.com/questions/11679567/using-css-for-fade-in-effect-on-page-load */
+/* -----------------------------------------------------------------------------------------------------
+    FADE IN ELEMENT
+
+    Adapted from: https://stackoverflow.com/questions/11679567/using-css-for-fade-in-effect-on-page-load
+-------------------------------------------------------------------------------------------------------- */
 .fadein {
     -webkit-animation: fadein 1s; /* Safari, Chrome and Opera > 12.1 */
        -moz-animation: fadein 1s; /* Firefox < 16 */
@@ -314,4 +386,3 @@ span.legend_description {
     from { opacity: 0; }
     to   { opacity: 1; }
 }
-

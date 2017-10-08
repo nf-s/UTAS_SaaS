@@ -27,7 +27,7 @@
 </head>
 <body>
 
-<div id="layout">
+<div id="layout" class="fadein" style="display: none;">
     <!-- Menu toggle -->
     <a href="#menu" id="menuLink" class="menu-link">
         <!-- Hamburger icon -->
@@ -36,9 +36,9 @@
 
     <div id="menu-hor" class="pure-menu pure-menu-horizontal primary_col_top_border">
         <ul class="pure-menu-list">
-            <li class="pure-menu-item"><a href="#settings" class="pure-menu-link">Account Settings</a></li>
-            <li class="pure-menu-item"><a href="#help" class="pure-menu-link">Help</a></li>
-            <li class="pure-menu-item"><a href="#logout" class="pure-menu-link">Log Out</a></li>
+            <li class="pure-menu-item"><a id="menu-settings" href="#settings" class="pure-menu-link">Account Settings</a></li>
+            <li class="pure-menu-item"><a id="menu-help" href="#help" class="pure-menu-link">Help</a></li>
+            <li class="pure-menu-item"><a id="menu-logout" href="#logout" class="pure-menu-link">Log Out</a></li>
         </ul>
     </div>
 
@@ -47,12 +47,12 @@
             <a class="pure-menu-heading" href="#">SaaS</a>
 
             <ul class="pure-menu-list">
-                <li class="pure-menu-item"><a href="#new-job" class="pure-menu-link">New Job</a></li>
-                <li class="pure-menu-item" class="menu-item-divided">
-                    <a href="#active-jobs" class="pure-menu-link pure-menu-selected">Active Jobs</a></li>
-
                 <li class="pure-menu-item">
-                    <a href="#inactive-jobs" class="pure-menu-link">Inactive Jobs</a>
+                    <a id="menu-new-job" href="#new-job" class="pure-menu-link">New Job</a></li>
+                <li class="pure-menu-item" class="menu-item-divided">
+                    <a id="menu-active-jobs" href="#active-jobs" class="pure-menu-link pure-menu-selected">Active Jobs</a></li>
+                <li class="pure-menu-item">
+                    <a id="menu-inactive-jobs" href="#inactive-jobs" class="pure-menu-link">Inactive Jobs</a>
                 </li>
             </ul>
         </div>
@@ -64,7 +64,7 @@
             <div id="job-table" class="fadein" style="display: none;">        
                 <p>
                 <div id="main-header">
-                    <a class="pure-button primary_col_bg" href="#">Add New Job</a>
+                    <a class="pure-button primary_col_bg other-menu-buttons" href="#new-job">Add New Job</a>
         
                 </div>  
                 <p>
@@ -76,7 +76,25 @@
                                 pagination-info-no-data-template="No jobs to list">
                                 <template slot="actions" scope="props">
                                     <div class="td-buttons">
-                                        <button class="pure-button error_col_bg" @click="stopJobClick(props.rowData)"><i class="fa fa-delete"></i> Stop</button>
+                                        <button class="pure-button primary_col_bg button-float-left" @click="viewJobResultsClick(props.rowData)" v-if="props.rowData['status'] === 'FINISHED'">
+                                            <i class="fa fa-results"></i>View Results
+                                        </button>
+                                            
+                                        <button class="pure-button primary_col_bg button-float-left" @click="relaunchJobClick(props.rowData)" v-if="props.rowData['status'] === 'ERROR'">
+                                            <i class="fa fa-relaunch"></i>Relaunch
+                                        </button>
+
+                                        <button class="pure-button" @click="viewJobLogClick(props.rowData)">
+                                            <i class="fa fa-log"></i>View Log
+                                        </button>
+
+                                        <button class="pure-button" @click="editJobClick(props.rowData)" v-if="props.rowData['status'] === 'ERROR'">
+                                            <i class="fa fa-edit"></i>Edit
+                                        </button>
+
+                                        <button class="pure-button error_col_bg" @click="stopJobClick(props.rowData)" v-if="props.rowData['status'] !== 'FINISHED' && props.rowData['status'] !== 'ERROR'">
+                                            <i class="fa fa-stop"></i> Stop
+                                        </button>
                                     </div>
                                 </template>
                             </vuetable>
@@ -95,9 +113,9 @@
                                     pagination-info-no-data-template="No jobs to list">
                                     <template slot="actions" scope="props">
                                         <div class="td-buttons">
-                                            <button class="pure-button primary_col_bg button-float-left" @click="launchJobClick(props.rowData)"><i class="fa fa-launch"></i> Launch</button>
+                                            <button class="pure-button primary_col_bg button-float-left" @click="launchJobClick(props.rowData)"><i class="fa fa-launch"></i>Launch</button>
                                             <button class="pure-button" @click="editJobClick(props.rowData)"><i class="fa fa-edit"></i> Edit</button>
-                                            <button class="pure-button error_col_bg" @click="deleteJobClick(props.rowData)"><i class="fa fa-delete"></i> Delete</button>
+                                            <button class="pure-button error_col_bg" @click="deleteJobClick(props.rowData)"><i class="fa fa-delete"></i>Delete</button>
                                         </div>
                                     </template>
                                 </vuetable>
@@ -110,6 +128,47 @@
 
                         <div id="no-jobs" style="display: none;">No jobs to display</div>
                 </div>
+            </div>
+
+            <div id="job-results-modal" v-show="showJobResultsModal">
+                <transition name="modal">
+                    <div class="modal-mask">
+                        <div class="modal-wrapper">
+                            <div class="modal-container">  
+                                <div class="modal-header">
+                                    <h3>Job Results</h3>
+                                </div>
+                                            
+                                <div class="modal-body">
+                                <slot name="body">
+                                    <div id="job-results-table" class="pure-table pure-table-striped fadein">
+                                        <vuetable ref="vuetableJobResultsTable"
+                                            :api-url="jobResultsApiUrl"
+                                            :fields="jobResultsFeilds" 
+                                            pagination-info-no-data-template="No jobs to list">
+                                            <template slot="actions" scope="props">
+                                                <div class="td-buttons">
+                                                    <a v-bind:href="MASTER_API_ROOTURL+'job/'+app.$data.selectedJobId+'/results/file/'+props.rowData['filename']" class="pure-button primary_col_bg" download>
+                                                        <i class="fa fa-results"></i>Download
+                                                    </a>
+                                                </div>
+                                            </template>
+                                        </vuetable>
+                                </slot>
+                                </div>
+                    
+                                <div class="modal-footer">
+                                <slot name="footer">
+                                    
+                                    <button class="pure-button" @click="showJobResultsModal = false">
+                                    Close
+                                    </button>   
+                                </slot>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </transition>
             </div>
         </div>
 
@@ -136,6 +195,7 @@
     </div>
 </div>
 
+  <!--====================================== START JS INCLUDES =========================================== -->
 <script src="js/brutusin-json-forms.js"></script>
 <script src="js/dropzone.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.2.6/vue.min.js"></script>

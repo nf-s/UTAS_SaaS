@@ -2,64 +2,70 @@ package au.edu.utas.lm_nfs_sg.saas.worker;
 
 import au.edu.utas.lm_nfs_sg.saas.comms.SocketClient;
 import au.edu.utas.lm_nfs_sg.saas.comms.SocketServer1To1;
+import jdk.nashorn.internal.scripts.JO;
 
-import java.io.*;
-import java.lang.reflect.Field;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.concurrent.TimeUnit;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
-public class Worker implements SocketServer1To1.MessageCallback {
-	static final String TAG = "Worker";
+public final class Worker {
+	static final String TAG = "<Worker>";
 
-	static private SocketServer1To1 masterSocketServer;
+	private static SocketServer1To1 masterSocketServer;
+	private static MasterRestClient masterRestClient;
 
-	static private WorkerProcessMonitorThread workerProcessMonitorThread;
+	public static String masterHostname;
+
+	private static Map<String, JobControllerThread> jobs = Collections.synchronizedMap(new HashMap<String, JobControllerThread>());
+
 
 	private Worker(int p) {
-		workerProcessMonitorThread = new WorkerProcessMonitorThread();
-		new Thread(workerProcessMonitorThread).start();
 
-		masterSocketServer = new SocketServer1To1(TAG+" MasterServer",p);
-		masterSocketServer.setOnMessageReceivedListener(this);
-		Thread masterSocketThread = new Thread(masterSocketServer);
-		masterSocketThread.start();
-		masterSocketServer.sendMessage("ready");
-
-		try {
-			masterSocketThread.join();
-			workerProcessMonitorThread.stopThread();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
 	}
 
 	public static void main(String[] args) {
-		if (args.length >= 1) {
+		if (args.length >= 2) {
+			masterHostname = args[0];
+
 			int port = 0;
-			int num_freq_words = 0;
 			try {
-				port = Integer.parseInt(args[0]);
+				port = Integer.parseInt(args[1]);
 				// If invalid port number is provided - exit program
 				if (port < 1024 || port > 65535) {
 					throw new NumberFormatException();
 				}
 			} catch (NumberFormatException e) {
-				System.out.println("Argument '" + args[0] + "' is an invalid port number - expecting an integer between 1024 and 65535");
+				System.out.println("Argument '" + args[1] + "' is an invalid port number - expecting an integer between 1024 and 65535");
 				System.exit(-1);
 			}
 
-			Worker worker = new Worker(port);
 
-		}// If less than 3 arguments are given when executing the program
+			MasterRestClient.setMasterHostname(masterHostname);
+
+			masterRestClient = new MasterRestClient("WorkerMain");
+
+			masterSocketServer = new SocketServer1To1(TAG+" MasterSocketServer",port);
+			masterSocketServer.setOnMessageReceivedListener(message -> handleSocketMessageFromMaster(message));
+
+			Thread masterSocketThread = new Thread(masterSocketServer);
+			masterSocketThread.start();
+			masterSocketServer.sendMessage("ready");
+
+			try {
+				masterSocketThread.join();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+
+		}
+		// If less than 3 arguments are given when executing the program
 		else {
 			System.out.println("Incorrect number of arguments given");
 			System.exit(-1);
 		}
 	}
 
-	@Override
-	public void newMessageReceived(String mess) {
+	private static void handleSocketMessageFromMaster(String mess) {
 		System.out.println(masterSocketServer.getTag()+" received " +mess);
 
 		String inputSplit;
@@ -73,127 +79,59 @@ public class Worker implements SocketServer1To1.MessageCallback {
 		}
 
 		switch (inputSplit) {
-			case "new_worker_process":
+			case "new_job":
 				//runProcessFromString(mess);
 				launchNewJob(mess.split(" ")[1]);
 				break;
-			case "remove_worker_process":
-				if (!workerProcessMonitorThread.removeProcess(mess)) {
-					try {
-						String jobId = mess.split(" ")[1];
-						masterSocketServer.sendMessage("error remove_worker_process id "+jobId);
-					} catch (Exception e) {
-						masterSocketServer.sendMessage("error remove_worker_process incorrect_args");
-						e.printStackTrace();
-					}
-				}
-				break;
-			/*case "send_resource_usage":
-				sendFreeResourcesToMaster();*/
-		}
 
+			case "stop_job":
+				//runProcessFromString(mess);
+				stopJob(mess.split(" ")[1], false);
+				break;
+
+			case "delete_job":
+				//runProcessFromString(mess);
+				stopJob(mess.split(" ")[1], true);
+				break;
+		}
+	}
+
+	static JobControllerThread getJobController(String jobId) {
+		if (jobs.containsKey(jobId)) {
+			return jobs.get(jobId);
+		} else {
+			System.out.println(TAG+" couldn't find "+jobId);
+		}
+		return null;
 	}
 
 	private static void launchNewJob(String jobId) {
 		System.out.println(TAG+" starting job "+jobId);
+
+		JobControllerThread newJobThread = new JobControllerThread(jobId,false);
+
+		jobs.put(jobId, newJobThread);
+		startJobControllerThread(newJobThread);
 	}
 
-	static void runProcessFromString(String s) {
-		try
-		{
-			String jobId = s.split(" ")[1];
+	private static void stopJob(String jobId, Boolean deleteFiles) {
+		JobControllerThread job = getJobController(jobId);
 
-			Process p = runProcess(jobId);
-
-			if (p!= null) {
-				workerProcessMonitorThread.addProcess(s, p);
-			}
-		}
-		catch (ArrayIndexOutOfBoundsException | NumberFormatException e)
-		{
-			masterSocketServer.sendMessage("error new_worker_process incorrect_args");
-			e.printStackTrace();
-		} catch (Exception e) {
-			masterSocketServer.sendMessage("error new_worker_process could_not_start_worker_process");
-			e.printStackTrace();
+		if (job != null) {
+			System.out.println(TAG+" stopping job "+jobId);
+			job.stopJop(deleteFiles);
 		}
 	}
 
-	private static Process runProcess(String jobId) throws Exception {
-		Path currentAbsolutePath = Paths.get("").toAbsolutePath();
-		String command = "java com.forbessmith.kit318_assignment04.worker.WorkerProcess "+jobId;
-		System.out.println("RUN NEW [WorkerProcess] - "+command);
-		Process pro = Runtime.getRuntime().exec(command);
-
-		handleWorkerProcessStdOut("[WorkerProcess] stdout:", pro.getInputStream());
-		//handleWorkerProcessStdOut("[WorkerProcess] stderr:", pro.getErrorStream());
-
-		if (pro.waitFor(500, TimeUnit.MILLISECONDS)) {
-			System.out.println("[WorkerProcess] exitValue() " + pro.exitValue());
-			masterSocketServer.sendMessage("error work_process_failed "+jobId);
-			return null;
-		} else {
-			System.out.println("[WorkerProcess] Stopped listening to job "+jobId+" - process is still running");
-			return pro;
+	private static Boolean startJobControllerThread(JobControllerThread jobControllerThread) {
+		if (!jobControllerThread.isRunning()) {
+			new Thread(jobControllerThread).start();
 		}
-	}
-
-	private static void handleWorkerProcessStdOut(String name, InputStream ins) throws Exception {
-		Boolean listenToProcess = true;
-		String line = null;
-		BufferedReader in = new BufferedReader(	new InputStreamReader(ins));
-		while ((line = in.readLine()) != null) {
-			String lineSplit;
-			// If message has any words - try to extract possible commands
-			try
-			{
-				lineSplit = line.split(" ")[0];
-			}
-			catch (ArrayIndexOutOfBoundsException e)
-			{
-				lineSplit = "";
-			}
-
-			if (lineSplit.equals("result_listening_port")) {
-				sendMessageToMaster(line);
-
-				break;
-			} else {
-				System.out.println(name + " " + line);
-			}
+		else if (!jobControllerThread.isWaiting()) {
+			jobControllerThread.notifyJobControllerThread();
 		}
-	}
+		return true;
 
-	private static void sendMessageToMaster(String message) {
-		if (masterSocketServer.isConnected())
-			masterSocketServer.sendMessage(message);
-		else {
-			SocketClient masterSocketClient = new SocketClient(TAG+" masterClient", "localhost", 1025);
-			masterSocketClient.setOnMessageReceivedListener(message1 -> {
-				if (message1.equals("thanks")) {
-					masterSocketClient.stopRunning();
-					masterSocketClient.closeSocket();
-				}
-			} );
-			new Thread(masterSocketClient).start();
-
-			masterSocketClient.sendMessage(message);
-		}
-	}
-
-	public static int getpid(Process pro){
-		if(pro.getClass().getName().equals("java.lang.UNIXProcess")) {
-	   /* get the PID on unix/linux systems */
-			try {
-				Field f = pro.getClass().getDeclaredField("pid");
-				f.setAccessible(true);
-				int pid = f.getInt(pro);
-				return pid;
-			} catch (Throwable e) {
-			}
-
-		}
-		return 0;
 	}
 
 	/*
