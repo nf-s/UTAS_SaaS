@@ -16,19 +16,22 @@ app = new Vue({
     el: '#app',
     components:{
         'vuetable-pagination': Vuetable.VuetablePagination
+        
     },
     data: {
         selectedJobId: null,
 
         activeApiUrl: MASTER_API_ROOTURL+"job/active",
-        activeFields: ['type', 'id', 'description', 'status','date-created','running-time','__slot:actions'],
+        activeFields: ['type', 'id', 'description', 'status','date-completed','running-time','__slot:actions'],
 
         inactiveApiUrl: MASTER_API_ROOTURL+"job/inactive",
         inactiveFields: ['type', 'id','description','status','date-created','__slot:actions'],
         
         showJobResultsModal: false,
         jobResultsApiUrl: "",
-        jobResultsFeilds: ['filename', 'size','__slot:actions']
+        jobResultsFeilds: ['filename', 'size','__slot:actions'],
+
+        showJobLaunchModal: false,
     },
     computed:{
         paginationInfo () {
@@ -52,10 +55,10 @@ app = new Vue({
             showEditJob(rowData['id']);
         },
         launchJobClick(rowData){
-            launchJob(rowData['id']);
+            showJobLaunchModal(rowData['id']);
         },
         relaunchJobClick(rowData){
-            //launchJob(rowData['id']);
+            showJobLaunchModal(rowData['id']);
         },
         deleteJobClick(rowData){
             deleteJob(rowData['id']);
@@ -67,10 +70,7 @@ app = new Vue({
             selectedJobId=rowData['id'];
         },
         viewJobResultsClick(rowData) {
-            this.$data.selectedJobId=rowData['id'];
-            this.$data.jobResultsApiUrl=MASTER_API_ROOTURL+"job/"+rowData['id']+"/results/filedetails";
-            this.$refs.vuetableJobResultsTable.reload();
-            this.$data.showJobResultsModal = true;
+            showJobResultsModal(rowData['id']);
         }
     },
     props:{
@@ -233,15 +233,37 @@ function showActiveJobs() {
     }
 }
 
+function showJobResultsModal(jobId) {
+    app.$data.selectedJobId=jobId;
+    app.$data.jobResultsApiUrl=MASTER_API_ROOTURL+"job/"+jobId+"/results/filedetails";
+    app.$refs.vuetableJobResultsTable.reload();
+    app.$data.showJobResultsModal = true;
+}
+
+function showJobLaunchModal(jobId) {
+    fp = flatpickr("#jobLaunchDatetimePicker", {
+        enableTime: true,
+        inline: true,
+        minDate: "today",
+        maxDate: new Date().fp_incr(14), // 14 days from now
+        time_24hr: true
+    });
+    app.$data.showJobLaunchModal = true;
+
+    document.getElementById("launch-job-btn").addEventListener("click", function () {
+        launchJob(jobId)
+    });
+}
 
 // -----------------------------------------------------------
 // JOB FUNCTIONS
 // -----------------------------------------------------------
 function launchJob(jobId) {
-    axios.put(MASTER_API_ROOTURL+'job/'+jobId+'/launch')
+    axios.put(MASTER_API_ROOTURL+'job/'+jobId+'/launch', {deadline: fp.input.value})
     .then(function (response) {
-        console.log(response);
+        console.log("job launched");
         showActiveJobs();
+        app.$data.showJobLaunchModal = false;
     })
     .catch(function (error) {
         console.log(error);
@@ -251,7 +273,7 @@ function launchJob(jobId) {
 function stopJob(jobId) {
     axios.put(MASTER_API_ROOTURL+'job/'+jobId+'/stop')
     .then(function (response) {
-        console.log(response);
+        console.log("job stopped");
         showActiveJobs();
     })
     .catch(function (error) {
@@ -262,7 +284,7 @@ function stopJob(jobId) {
 function deleteJob(jobId) {
     axios.delete(MASTER_API_ROOTURL+'job/'+jobId)
     .then(function (response) {
-        console.log(response);
+        console.log("job deleted");
         showInactiveJobs();
     })
     .catch(function (error) {
@@ -320,7 +342,7 @@ function initJobForm(jobId="") {
 }
 
 function loadForm(jobFormSchema, jobId, data={}, useExistingFormData=false) {
-    form_data={}
+    var form_data={}
     
     if (data['form_data'] != undefined) {
         form_data=data['form_data']
@@ -340,7 +362,7 @@ function loadForm(jobFormSchema, jobId, data={}, useExistingFormData=false) {
                 data['files_uploaded']));
     }
             
-    BrutusinForms = brutusin["json-forms"];
+    var BrutusinForms = brutusin["json-forms"];
     
     BrutusinForms.addDecorator(function (element, formSchema) {
         if (element.tagName) {
@@ -380,6 +402,7 @@ function loadForm(jobFormSchema, jobId, data={}, useExistingFormData=false) {
         }
     });
     
+    // bf must be global - should fix at somepoint
     bf = BrutusinForms.create(jobFormSchema);
     container = document.getElementById('job-form-container');
     
@@ -390,7 +413,7 @@ function loadForm(jobFormSchema, jobId, data={}, useExistingFormData=false) {
     document.getElementById("job-form-submit-btn").addEventListener("click", function () {
         axios.put(MASTER_API_ROOTURL+'job/'+jobId, bf.getData())
         .then(function (response) {
-            console.log(response);
+            console.log("job updated");            
             
             showInactiveJobs();
             clearForm();
@@ -427,6 +450,7 @@ Dropzone.autoDiscover = false;
 function initDropzone(jobId, jobFormSchema) {
     clearDropzone();
     // Create + setup Dropzone
+    // myDropzone must be global
     myDropzone = new Dropzone("div#job-form-upload", { 
         url: MASTER_API_ROOTURL+"job/"+jobId+"/resources/file",
         params: {apikey: API_KEY},

@@ -13,8 +13,6 @@ public class MasterRestApi extends ResourceConfig {
 		// Resources.
 		register(MultiPartFeature.class);
 
-		register(DefaultMethodResource.class);
-
 		register(ClientJobResource.class);
 		register(WorkerJobResource.class);
 

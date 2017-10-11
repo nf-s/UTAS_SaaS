@@ -1,6 +1,6 @@
 package au.edu.utas.lm_nfs_sg.saas.worker;
 
-import com.sun.org.apache.xpath.internal.operations.Bool;
+import com.sun.javafx.binding.StringFormatter;
 
 import java.io.*;
 import java.nio.file.*;
@@ -14,10 +14,11 @@ public class JobControllerThread implements Runnable {
 	// Static Properties/Functions
 	//================================================================================
 	enum Status {
-		PREPARING, QUEUED, STARTING, RUNNING, FINISHED, STOPPING, STOPPED, MIGRATING, ERROR, DELETING, DELETED
+		PREPARING, QUEUED, STARTING, RUNNING, FINISHING, FINISHED, STOPPING, STOPPED, MIGRATING, ERROR, DELETING, DELETED
 	}
 
 	public final static String TAG = "<JobController>";
+	private final static Boolean DEBUG = true;
 
 	//================================================================================
 	// Properties
@@ -25,6 +26,7 @@ public class JobControllerThread implements Runnable {
 
 	private String jobId;
 	private Status status;
+	private StatusChangeListener statusChangeListener;
 
 	private MasterRestClient masterRestClient;
 
@@ -69,6 +71,12 @@ public class JobControllerThread implements Runnable {
 
 	Boolean isWaiting() {return waiting;}
 
+	Boolean isQueued() {return queued;}
+
+	public void setQueued(Boolean q) {
+		queued = q;
+	}
+
 	public String getTag() {
 		return TAG+"["+jobId+"]";
 	}
@@ -77,6 +85,8 @@ public class JobControllerThread implements Runnable {
 		if (status!=newStatus) {
 			addNewLogMessage("Job status updated to "+newStatus);
 			status = newStatus;
+			if (statusChangeListener != null)
+				statusChangeListener.onJobStatusChanged(this, newStatus);
 			masterRestClient.updateJobStatus(jobId, newStatus);
 		}
 	}
@@ -94,13 +104,14 @@ public class JobControllerThread implements Runnable {
 		while(running) try {
 			if (!queued) {
 				executeJob();
-				stopRunning();
+				stopThreadRunning();
 			} else {
 				setStatus(Status.QUEUED);
 			}
 
 			if (running) {
-				System.out.println(getTag() + " waiting");
+				if (DEBUG)
+					System.out.println(getTag() + " waiting");
 				waiting = true;
 				synchronized (this) {
 					while (waiting) {
@@ -118,11 +129,21 @@ public class JobControllerThread implements Runnable {
 		notify();
 	}
 
-	public void stopRunning() {
-		addNewLogMessage("Job is stopping");
+	public void stopThreadRunning() {
+		addNewLogMessage("Job Thread is stopping");
 		running=false;
 		if(isWaiting())
 			notifyJobControllerThread();
+	}
+
+	public Boolean startThread() {
+		if (!isRunning()) {
+			new Thread(this).start();
+		}
+		if (isWaiting()) {
+			notifyJobControllerThread();
+		}
+		return true;
 	}
 
 	//================================================================================
@@ -188,11 +209,13 @@ public class JobControllerThread implements Runnable {
 				jobProcessStdOutThread.join();
 				jobProcessStdErrThread.join();
 			} catch (Exception e) {
-				System.out.println(getTag()+" Couldn't join stdout/stderr threads");
+				if (DEBUG)
+					System.out.println(getTag()+" Couldn't join stdout/stderr threads");
 				e.printStackTrace();
 			}
 
 			addNewLogMessage(String.format("Job process exited - code: %d", exitCode),"JobController");
+			setStatus(Status.FINISHING);
 
 			// If process executed without error (exitCode-143 = SIGTERM)
 			if (exitCode == 0) {
@@ -234,15 +257,7 @@ public class JobControllerThread implements Runnable {
 		});
 	}
 
-	private synchronized void addNewLogMessage(String mess) {
-		addNewLogMessage(mess, "Main");
-	}
-	private synchronized void addNewLogMessage(String mess, String source){
-		logMessageList.add(new LogMessage(mess, Calendar.getInstance(), source));
-		System.out.printf("%s %s: %s%n", getTag(), source, mess);
-	}
-
-	synchronized void stopJop(Boolean deleteFiles) {
+	synchronized void stopJob(Boolean deleteFiles) {
 		if ((status != Status.STOPPED) && (status != Status.FINISHED) && (status != Status.ERROR)) {
 			setStatus(Status.STOPPING);
 			if (jobProcess != null) {
@@ -251,7 +266,7 @@ public class JobControllerThread implements Runnable {
 			if (jobProcessInputStreamThreadsRunning != null) {
 				jobProcessInputStreamThreadsRunning = false;
 			}
-			stopRunning();
+			stopThreadRunning();
 			setStatus(Status.STOPPED);
 		}
 
@@ -286,26 +301,48 @@ public class JobControllerThread implements Runnable {
 			e.printStackTrace();
 		}
 	}
-}
+
 
 //================================================================================
 // Classes/Interfaces
 //================================================================================
 
-class LogMessage {
-	String source;
-	String message;
-	Calendar timestamp;
 
-	LogMessage(String m, Calendar c) {
-		source = "JobController";
-		message=m;
-		timestamp=c;
+	private synchronized void addNewLogMessage(String mess) {
+		addNewLogMessage(mess, "Main");
+	}
+	private synchronized void addNewLogMessage(String mess, String source){
+		logMessageList.add(new LogMessage(mess, Calendar.getInstance(), source));
+		if (DEBUG) {
+			System.out.printf("%s %s: %s%n", getTag(), source, mess);
+			Worker.sendMessageToMasterSocket(String.format("%s %s: %s", getTag(), source, mess));
+		}
 	}
 
-	LogMessage(String m, Calendar c, String s) {
-		source = s;
-		message=m;
-		timestamp=c;
+	class LogMessage {
+		String source;
+		String message;
+		Calendar timestamp;
+
+		LogMessage(String m, Calendar c) {
+			source = "JobController";
+			message=m;
+			timestamp=c;
+		}
+
+		LogMessage(String m, Calendar c, String s) {
+			source = s;
+			message=m;
+			timestamp=c;
+		}
 	}
+
+	void setOnStatusChangeListener(StatusChangeListener listener) {
+		statusChangeListener = listener;
+	}
+
+	interface StatusChangeListener {
+		void onJobStatusChanged(JobControllerThread job, Status currentStatus) ;
+	}
+
 }

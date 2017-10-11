@@ -17,6 +17,12 @@ body {
     text-align: right;
 }
 
+#app {
+    max-width: 1600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
 
 /* ----------------------------------------------------------------------------------
     COLORS STYLING
@@ -80,6 +86,10 @@ body {
     background-color: #222129;
 }
 
+#menuLink {
+    margin-top: 4px
+}
+
 /* ----------------------------------------------------------------------------------
     BUTTON STYLING
 ----------------------------------------------------------------------------------- */
@@ -87,6 +97,7 @@ body {
     border-radius: 3px;
     color: rgb(255, 255, 255);
     background-color: #373641;
+    margin: .25em 0em .25em 0em;
 }
 
 .pure-button-hover, .pure-button:hover {
@@ -138,11 +149,33 @@ body {
 }
 
 .button-float-left {
+    margin-right: 4px;
     float: left;
 }
 
 .button-float-right {
+    margin-left: 4px;
     float: right;
+}
+
+@media screen and (max-width: 1280px) {
+    div.td-buttons {
+        text-align: center !important;
+        margin: -.25em 0em;
+    }
+
+    div.td-buttons > .pure-button {
+        display: block !important;
+    }
+    .button-float-left {
+        margin-right: 0px !important;
+        float: none !important;
+    }
+
+    .button-float-right {
+        margin-left: 0px !important;
+        float: none !important;
+    }
 }
 
     
@@ -159,8 +192,9 @@ body {
     background-color: #f7f7f7;
 }
 
-.td-buttons {
+div.td-buttons {
     text-align: right;
+    margin: -.25em -.5em;
 }
 
 /* ----------------------------------------------------------------------------------
@@ -223,7 +257,6 @@ span.legend_description {
     font-size: 85%;
 }
 
-
 /* ----------------------------------------------------------------------------------
     DROPZONE STYLING
 ----------------------------------------------------------------------------------- */
@@ -284,11 +317,14 @@ span.legend_description {
   .modal-wrapper {
     display: table-cell;
     vertical-align: middle;
+    text-align: center;
   }
   
   .modal-container {
-    width: 500px;
+    display: inline-block;
+    width: auto;
     margin: 0px auto;
+    
     padding: 20px 20px;
     background-color: #fff;
     border-radius: 2px;
@@ -327,6 +363,36 @@ span.legend_description {
 
 
 /* ----------------------------------------------------------------------------------
+    JOB LAUNCH MODAL
+----------------------------------------------------------------------------------- */
+
+.flatpickr-calendar.inline {
+   margin-left: auto;
+   margin-right: auto;
+   margin-top: 8px;
+}
+
+pure-form job-launch-modal {
+    text-align: center;
+}
+
+#jobLaunchDatetimePicker {
+    width: 100%;
+    background-color: #eee;
+    color: #777;
+    border-color: #ccc;
+    padding: .5em .6em;
+    display: inline-block;
+    border: 1px solid #ccc;
+    box-shadow: inset 0 1px 3px #ddd;
+    border-radius: 4px;
+    vertical-align: middle;
+    box-sizing: border-box;
+}
+
+
+
+/* ----------------------------------------------------------------------------------
     MOBILE BROWSER STYLES
 
     Adapted from: https://stackoverflow.com/questions/3514784/what-is-the-best-way-to-detect-a-mobile-device-in-jquery
@@ -351,11 +417,11 @@ span.legend_description {
     Adapted from: https://stackoverflow.com/questions/11679567/using-css-for-fade-in-effect-on-page-load
 -------------------------------------------------------------------------------------------------------- */
 .fadein {
-    -webkit-animation: fadein 1s; /* Safari, Chrome and Opera > 12.1 */
-       -moz-animation: fadein 1s; /* Firefox < 16 */
-        -ms-animation: fadein 1s; /* Internet Explorer */
-         -o-animation: fadein 1s; /* Opera < 12.1 */
-            animation: fadein 1s;
+    -webkit-animation: fadein .5s; /* Safari, Chrome and Opera > 12.1 */
+       -moz-animation: fadein .5s; /* Firefox < 16 */
+        -ms-animation: fadein .5s; /* Internet Explorer */
+         -o-animation: fadein .5s; /* Opera < 12.1 */
+            animation: fadein .5s;
 }
 
 @keyframes fadein {

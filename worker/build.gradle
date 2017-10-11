@@ -36,6 +36,11 @@ dependencies {
     compile 'com.google.code.gson:gson:2.8.2'
 }
 
+task moveToPublicFolder(type: Copy) {
+    from 'build/libs/worker-1.0-all.jar'
+    into '../master/src/main/webapp/worker'
+}
+
 // ____ WORKER NOTES
 // Must only use Java 8  (NOT 9)
 

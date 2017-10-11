@@ -1,12 +1,11 @@
 package au.edu.utas.lm_nfs_sg.saas.worker;
 
-import au.edu.utas.lm_nfs_sg.saas.comms.SocketClient;
 import au.edu.utas.lm_nfs_sg.saas.comms.SocketServer1To1;
-import jdk.nashorn.internal.scripts.JO;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
+import static java.util.Collections.*;
 
 public final class Worker {
 	static final String TAG = "<Worker>";
@@ -16,15 +15,13 @@ public final class Worker {
 
 	public static String masterHostname;
 
-	private static Map<String, JobControllerThread> jobs = Collections.synchronizedMap(new HashMap<String, JobControllerThread>());
+	private static Map<String, JobControllerThread> jobs;
+	private static Queue<JobControllerThread> jobQueue;
 
-
-	private Worker(int p) {
-
-	}
+	private static Boolean sharedWorker;
 
 	public static void main(String[] args) {
-		if (args.length >= 2) {
+		if (args.length >= 3) {
 			masterHostname = args[0];
 
 			int port = 0;
@@ -39,9 +36,9 @@ public final class Worker {
 				System.exit(-1);
 			}
 
+			sharedWorker = Boolean.parseBoolean(args[2]);
 
 			MasterRestClient.setMasterHostname(masterHostname);
-
 			masterRestClient = new MasterRestClient("WorkerMain");
 
 			masterSocketServer = new SocketServer1To1(TAG+" MasterSocketServer",port);
@@ -49,6 +46,12 @@ public final class Worker {
 
 			Thread masterSocketThread = new Thread(masterSocketServer);
 			masterSocketThread.start();
+
+			jobs = synchronizedMap(new HashMap<String, JobControllerThread>());
+			if(!sharedWorker) {
+				jobQueue = new ConcurrentLinkedQueue<JobControllerThread>();
+			}
+
 			masterSocketServer.sendMessage("ready");
 
 			try {
@@ -63,6 +66,10 @@ public final class Worker {
 			System.out.println("Incorrect number of arguments given");
 			System.exit(-1);
 		}
+	}
+
+	public static void sendMessageToMasterSocket(String mess) {
+		masterSocketServer.sendMessage(mess);
 	}
 
 	private static void handleSocketMessageFromMaster(String mess) {
@@ -108,10 +115,27 @@ public final class Worker {
 	private static void launchNewJob(String jobId) {
 		System.out.println(TAG+" starting job "+jobId);
 
-		JobControllerThread newJobThread = new JobControllerThread(jobId,false);
+		JobControllerThread newJobThread = new JobControllerThread(jobId,!sharedWorker);
 
 		jobs.put(jobId, newJobThread);
-		startJobControllerThread(newJobThread);
+		if(!sharedWorker) {
+			newJobThread.setOnStatusChangeListener((job, currentStatus) -> {
+				if (currentStatus == JobControllerThread.Status.FINISHING || currentStatus == JobControllerThread.Status.ERROR) {
+					popJobFromQueue(job);
+					newJobThread.setOnStatusChangeListener(null);
+				}
+			});
+			// If this job queue is empty - execute job straight away
+			if (jobQueue.size() == 0) {
+				newJobThread.setQueued(false);
+				System.out.println(TAG+" queue is empty, starting job immediately");
+			} else {
+				System.out.println(TAG+" adding job to queue");
+			}
+			jobQueue.add(newJobThread);
+			System.out.println(TAG+" queue length = "+jobQueue.size());
+		}
+		newJobThread.startThread();
 	}
 
 	private static void stopJob(String jobId, Boolean deleteFiles) {
@@ -119,19 +143,29 @@ public final class Worker {
 
 		if (job != null) {
 			System.out.println(TAG+" stopping job "+jobId);
-			job.stopJop(deleteFiles);
+			job.stopJob(deleteFiles);
+
+			if (!sharedWorker) {
+				popJobFromQueue(job);
+			}
 		}
 	}
 
-	private static Boolean startJobControllerThread(JobControllerThread jobControllerThread) {
-		if (!jobControllerThread.isRunning()) {
-			new Thread(jobControllerThread).start();
+	private static void popJobFromQueue(JobControllerThread oldJob) {
+		if (jobQueue.peek()==oldJob) {
+			jobQueue.poll();
+		} else {
+			jobQueue.remove(oldJob);
 		}
-		else if (!jobControllerThread.isWaiting()) {
-			jobControllerThread.notifyJobControllerThread();
-		}
-		return true;
 
+		if (jobQueue.size() > 0 ) {
+			System.out.println(TAG+" starting next job in queue");
+			System.out.println(TAG+" queue length = "+jobQueue.size());
+			jobQueue.peek().setQueued(false);
+			jobQueue.peek().startThread();
+		} else {
+			System.out.println(TAG+" job queue empty, no jobs to start");
+		}
 	}
 
 	/*

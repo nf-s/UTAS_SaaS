@@ -29,8 +29,8 @@ public class SparkJob extends Job {
 	SparkJob(String jobId) {
 		super(jobId);
 
-		setJobImageId("26e87817-068b-4221-85a6-e5658aaa12a3");
-		setCanRunOnSharedWorker(false);
+		setJobImageId("9df4f910-341c-42c5-ad09-5e7533934bfa");
+		setRunOnSharedWorker(false);
 	}
 
 	@Override

@@ -1,10 +1,13 @@
 package au.edu.utas.lm_nfs_sg.saas.master;
 
 import au.edu.utas.lm_nfs_sg.saas.comms.SocketClient;
+import org.jclouds.openstack.nova.v2_0.domain.Flavor;
 
 import java.io.IOException;
 import java.util.Calendar;
+import java.util.Queue;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class MasterWorkerThread implements Runnable, SocketClient.MessageCallback {
 
@@ -14,6 +17,7 @@ public class MasterWorkerThread implements Runnable, SocketClient.MessageCallbac
 
 	public static final String  TAG = "<MasterWorkerThread>";
 
+
 	private Status workerStatus;
 
 	private String cloudServerId;
@@ -22,46 +26,70 @@ public class MasterWorkerThread implements Runnable, SocketClient.MessageCallbac
 	private JCloudsNova jCloudsNova;
 	private Boolean serverOnCloud;
 	private int cloudServerNumVCpus;
+	private Flavor instanceFlavour;
 
 	private Boolean workerCreated;
 	private String workerHostname;
 	private int workerPort;
 	private SocketClient workerSocketClient;
 
+	private Boolean sharedWorker = false;
+	private Queue<Job> jobQueue;
+
 	private Boolean available = true;
 	private int numJobsRunning = 0;
 
 	private Calendar connectionTimeoutTime;
+	private Calendar createWorkerStartTime;
+	private Calendar createWorkerEndTime;
 
 	private StatusChangeListener statusChangeListener;
 
 	private volatile Boolean running;
 	private volatile Boolean waiting;
 
-	MasterWorkerThread(int vCpuCount) {
-		serverOnCloud = true;
-		cloudServerNumVCpus = vCpuCount;
-		workerStatus = Status.CREATING;
-		workerCreated = false;
-		workerHostname = "[new cloud server]";
+	// ------------------------------------------------------------------------
+	// Constructors
+	// ------------------------------------------------------------------------
+
+	// Create new worker/cloud instance
+	MasterWorkerThread(Flavor instanceFlavour, Boolean isSharedWorker) {
+		workerHostname = "[unknown]";
 		workerPort = -1;
 
-		running = false;
-		waiting = false;
+		workerCreated = false;
+		serverOnCloud = true;
+
+		this.instanceFlavour = instanceFlavour;
+
+		sharedWorker = isSharedWorker;
+
+		workerStatus = Status.CREATING;
+
+		init();
 	}
 
-	MasterWorkerThread(String h, int p) {
-		this (h, p, false);
-	}
-	MasterWorkerThread(String h, int p, Boolean onCloud) {
-		workerCreated = true;
+	// Already existing worker
+	MasterWorkerThread(String h, int p, Boolean onCloud, Boolean isSharedWorker) {
 		workerHostname = h;
 		workerPort = p;
+
+		workerCreated = true;
 		serverOnCloud = onCloud;
+		sharedWorker = isSharedWorker;
 
 		workerStatus = Status.INITIATING;
+
+		init();
+	}
+
+	private void init() {
 		running = false;
 		waiting = false;
+
+		if(!sharedWorker) {
+			jobQueue = new ConcurrentLinkedQueue<Job>();
+		}
 	}
 
 	// ------------------------------------------------------------------------
@@ -115,15 +143,43 @@ public class MasterWorkerThread implements Runnable, SocketClient.MessageCallbac
 		notify();
 	}
 
+	public Boolean startThread() {
+		if (getStatus() != MasterWorkerThread.Status.CREATING) {
+			if (!isRunning())
+				new Thread(this).start();
+			else if (!isConnected())
+				notifyWorkerThread();
+
+			while (isConnecting()) {
+				try {
+					if (isLastConnectionTimeoutRecent())
+						break;
+					Thread.sleep(500);
+
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+
+		return isConnected();
+
+	}
+
 	// ------------------------------------------------------------------------
 	// WORKER METHODS
 	// ------------------------------------------------------------------------
 	private void createNewWorker() {
+		createWorkerStartTime = Calendar.getInstance();
+
 		System.out.println(TAG+ " creating new worker");
 		jCloudsNova = new JCloudsNova();
+
 		cloudServerName = UUID.randomUUID().toString();
-		cloudServerId = jCloudsNova.createWorker(cloudServerName, cloudServerNumVCpus);
-		cloudServerNumVCpus = jCloudsNova.getServerNumVCpus();
+		cloudServerId = jCloudsNova.createWorker(cloudServerName, sharedWorker);
+
+		// Assign instance flavour again - just in case it has been changed in process of creation
+		instanceFlavour = jCloudsNova.getInstanceFlavour();
 
 		System.out.println(TAG+ " worker created - waiting for initialisation");
 		cloudServerStatus = "BUILD";
@@ -143,7 +199,7 @@ public class MasterWorkerThread implements Runnable, SocketClient.MessageCallbac
 
 		if (cloudServerStatus.equals("ACTIVE")) {
 			workerHostname = jCloudsNova.getServerIp();
-			workerPort = 1234;
+			workerPort = 8081;
 			System.out.println(TAG + " server successfully created! - current server status: " + cloudServerStatus);
 			System.out.println(getTag() + " server hostname = " + workerHostname);
 			System.out.println(getTag() + " server port = " + workerPort);
@@ -171,7 +227,10 @@ public class MasterWorkerThread implements Runnable, SocketClient.MessageCallbac
 					break;
 				case CONNECTED:
 					setStatus(Status.ACTIVE);
-					workerCreated = true;
+					if (!workerCreated) {
+						createWorkerEndTime = Calendar.getInstance();
+						workerCreated = true;
+					}
 					break;
 				case DISCONNECTED:
 					setStatus(Status.INACTIVE);
@@ -236,6 +295,8 @@ public class MasterWorkerThread implements Runnable, SocketClient.MessageCallbac
 		//available=true;
 
 		numJobsRunning ++;
+
+		addJobToQueue(job);
 	}
 
 	/**
@@ -244,6 +305,8 @@ public class MasterWorkerThread implements Runnable, SocketClient.MessageCallbac
 	void deleteJob(Job job) {
 		job.setStatus(Job.Status.STOPPING);
 		workerSocketClient.sendMessage("delete_job "+job.getId());
+
+		removeJobFromQueue(job);
 	}
 
 	/**
@@ -252,6 +315,55 @@ public class MasterWorkerThread implements Runnable, SocketClient.MessageCallbac
 	void stopJob(Job job) {
 		job.setStatus(Job.Status.STOPPING);
 		workerSocketClient.sendMessage("stop_job "+job.getId());
+
+		removeJobFromQueue(job);
+	}
+
+	/**
+	 *  When a job finishes on worker - remove from Queue
+	 */
+	void jobFinished(Job job) {
+		removeJobFromQueue(job);
+	}
+
+	// ------------------------------------------------------------------------
+	// JOB QUEUE METHODS
+	// ------------------------------------------------------------------------
+
+	synchronized void addJobToQueue(Job job) {
+		if(!sharedWorker) {
+			jobQueue.add(job);
+		}
+	}
+
+	synchronized void removeJobFromQueue(Job job) {
+		if (!sharedWorker) {
+			if (jobQueue.contains(job))
+				jobQueue.remove(job);
+		}
+	}
+
+	synchronized Calendar estimateQueueCompletionCalendar() {
+		Calendar returnCal = Calendar.getInstance();
+		returnCal.add(Calendar.MILLISECOND, estimateQueueCompletionTimeInMs().intValue());
+
+		return returnCal;
+	}
+
+	synchronized Long estimateQueueCompletionTimeInMs() {
+		Long time = 0L;
+		if (!sharedWorker) {
+			for (Job job : jobQueue) {
+				time += job.estimateExecutionTimeInMs(jCloudsNova.getInstanceFlavour());
+				if (job.getStatus() == Job.Status.RUNNING) {
+					time -= job.getUsedCpuTimeInMs();
+				}
+			}
+		}
+
+		System.out.println(getTag()+" Estimated time for queue completion is "+time.toString()+" ms");
+
+		return time;
 	}
 
 	// ------------------------------------------------------------------------
@@ -270,6 +382,8 @@ public class MasterWorkerThread implements Runnable, SocketClient.MessageCallbac
 	String getWorkerHost() {
 		return workerHostname +":"+ workerPort;
 	}
+
+	Boolean isSharedWorker() {return sharedWorker;}
 
 	Boolean isConnected() {return workerStatus==Status.ACTIVE;}
 
@@ -300,8 +414,12 @@ public class MasterWorkerThread implements Runnable, SocketClient.MessageCallbac
 			return false;
 
 		Calendar connectionTimeoutTimeCutoff = Calendar.getInstance();
-		connectionTimeoutTimeCutoff.add(Calendar.HOUR, -1);
+		connectionTimeoutTimeCutoff.add(Calendar.MINUTE, -10);
 		return connectionTimeoutTime.after(connectionTimeoutTimeCutoff);
+	}
+
+	public Flavor getInstanceFlavour() {
+		return instanceFlavour;
 	}
 
 	// ------------------------------------------------------------------------

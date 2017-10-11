@@ -10,9 +10,15 @@ public class JobJSONSerializer implements JsonSerializer<Job> {
 
 		jsonObject.addProperty("type", job.getJobClassString());
 		jsonObject.addProperty("id", job.getId());
-		jsonObject.addProperty("status", job.getStatus().toString());
+		jsonObject.addProperty("status", job.getStatusString());
 		jsonObject.addProperty("date-created", Job.getCalendarString(job.getCreatedDate()));
-		jsonObject.addProperty("running-time", Job.getTimeString(job.getUsedCpuTime()));
+
+		if (job.getStatus() != Job.Status.FINISHED) {
+			jsonObject.addProperty("date-completed", Job.getCalendarString(job.getEstimatedFinishDate()));
+		} else {
+			jsonObject.addProperty("date-completed", Job.getCalendarString(job.getFinishDate()));
+		}
+		jsonObject.addProperty("running-time", Job.getTimeString(job.getUsedCpuTimeInMs()));
 
 		return jsonObject;
 	}

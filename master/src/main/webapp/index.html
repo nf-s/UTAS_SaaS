@@ -9,6 +9,9 @@
     <link rel="stylesheet" href='css/brutusin-json-forms.min.css'/>
     <link rel="stylesheet" href="css/dropzone.min.css">
 
+    <link rel="stylesheet" href="https://unpkg.com/flatpickr/dist/flatpickr.min.css">
+    
+
 
     <!--START PURE CSS RESOURCES-->
     <link rel="stylesheet" href="css/pure-min.css">
@@ -73,6 +76,7 @@
                             <vuetable ref="vuetableActiveJobTable"
                                 :api-url="activeApiUrl"
                                 :fields="activeFields" 
+                                pagination-path="" 
                                 pagination-info-no-data-template="No jobs to list">
                                 <template slot="actions" scope="props">
                                     <div class="td-buttons">
@@ -80,7 +84,7 @@
                                             <i class="fa fa-results"></i>View Results
                                         </button>
                                             
-                                        <button class="pure-button primary_col_bg button-float-left" @click="relaunchJobClick(props.rowData)" v-if="props.rowData['status'] === 'ERROR'">
+                                        <button class="pure-button button-warning button-float-left" @click="relaunchJobClick(props.rowData)" v-if="props.rowData['status'] === 'ERROR'">
                                             <i class="fa fa-relaunch"></i>Relaunch
                                         </button>
 
@@ -110,6 +114,7 @@
                                 <vuetable ref="vuetableInactiveJobTable"
                                     :api-url="inactiveApiUrl"
                                     :fields="inactiveFields" 
+                                    pagination-path="" 
                                     pagination-info-no-data-template="No jobs to list">
                                     <template slot="actions" scope="props">
                                         <div class="td-buttons">
@@ -130,67 +135,90 @@
                 </div>
             </div>
 
-            <div id="job-results-modal" v-show="showJobResultsModal">
-                <transition name="modal">
-                    <div class="modal-mask">
-                        <div class="modal-wrapper">
-                            <div class="modal-container">  
-                                <div class="modal-header">
-                                    <h3>Job Results</h3>
+            <div id="job-results-modal" v-show="showJobResultsModal" class="fadein">
+                <div class="modal-mask">
+                    <div class="modal-wrapper">
+                        <div class="modal-container">  
+                            <div class="modal-header">
+                                <h3>Job Results</h3>
+                            </div>
+                                        
+                            <div class="modal-body">
+                                <div id="job-results-table" class="pure-table pure-table-striped fadein">
+                                    <vuetable ref="vuetableJobResultsTable"
+                                        :api-url="jobResultsApiUrl"
+                                        :fields="jobResultsFeilds" 
+                                        pagination-path="" 
+                                        pagination-info-no-data-template="No jobs to list">
+                                        <template slot="actions" scope="props">
+                                            <div class="td-buttons">
+                                                <a v-bind:href="MASTER_API_ROOTURL+'job/'+app.$data.selectedJobId+'/results/file/'+props.rowData['filename']" class="pure-button primary_col_bg" download>
+                                                    <i class="fa fa-results"></i>Download
+                                                </a>
+                                            </div>
+                                        </template>
+                                    </vuetable>
                                 </div>
-                                            
-                                <div class="modal-body">
-                                <slot name="body">
-                                    <div id="job-results-table" class="pure-table pure-table-striped fadein">
-                                        <vuetable ref="vuetableJobResultsTable"
-                                            :api-url="jobResultsApiUrl"
-                                            :fields="jobResultsFeilds" 
-                                            pagination-info-no-data-template="No jobs to list">
-                                            <template slot="actions" scope="props">
-                                                <div class="td-buttons">
-                                                    <a v-bind:href="MASTER_API_ROOTURL+'job/'+app.$data.selectedJobId+'/results/file/'+props.rowData['filename']" class="pure-button primary_col_bg" download>
-                                                        <i class="fa fa-results"></i>Download
-                                                    </a>
-                                                </div>
-                                            </template>
-                                        </vuetable>
-                                </slot>
-                                </div>
-                    
-                                <div class="modal-footer">
-                                <slot name="footer">
-                                    
-                                    <button class="pure-button" @click="showJobResultsModal = false">
-                                    Close
-                                    </button>   
-                                </slot>
-                                </div>
+                            </div>
+                
+                            <div class="modal-footer">
+                                <button class="pure-button" @click="showJobResultsModal = false">
+                                Close
+                                </button>
                             </div>
                         </div>
                     </div>
-                </transition>
-            </div>
-        </div>
-
-        <div id="job-form" class="fadein" style="display: none;">
-            <div class="header"><h1>New Spark Job</h1></div>
-            <div class="job-info" id="job-info"></div>
-            <div id="job-form-upload" class="dropzone">
-                <p>
-                <div class="fallback">
-                <form id="jobFormUploadFallback" action="" enctype="multipart/form-data" method="post">
-                    
-                        <label>Select multiple files...</label><input type= "file" name="files" multiple /> <br/><br/>
-                        <input type="submit" title="Save"/>
-                    
-                </form>
                 </div>
             </div>
-            <div id="job-form-container"></div>
-            <p class="job-submit">
+
+            <div id="job-launch-modal" v-show="showJobLaunchModal" class="fadein">
+                <div class="modal-mask">
+                    <div class="modal-wrapper">
+                        <div class="modal-container">  
+                            <div class="modal-header">
+                                <h3>Job Launch Options</h3>
+                            </div>
+                                        
+                            <div class="modal-body job-launch-modal">
+                                <p>
+                                <input id="jobLaunchDatetimePicker" placeholder="Select Deadline..." readonly="readonly" type="text">
+                                </p>
+                            </div>
+                
+                            <div class="modal-footer">
+                                <button class="pure-button button-float-left" @click="showJobLaunchModal = false">
+                                Cancel
+                                </button>   
+
+                                <button class="pure-button primary_col_bg" id="launch-job-btn">
+                                Launch
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="job-form" class="fadein" style="display: none;">
+                <div class="header"><h1>New Spark Job</h1></div>
+                <div class="job-info" id="job-info"></div>
+                <div id="job-form-upload" class="dropzone">
+                    <p>
+                    <div class="fallback">
+                    <form id="jobFormUploadFallback" action="" enctype="multipart/form-data" method="post">
+                        
+                            <label>Select multiple files...</label><input type= "file" name="files" multiple /> <br/><br/>
+                            <input type="submit" title="Save"/>
+                        
+                    </form>
+                    </div>
+                </div>
+                <div id="job-form-container"></div>
+                <p class="job-submit">
                     <a class="pure-button error_col_bg button-float-left button-xlarge" href="" onclick="return false;" id="job-form-discard-btn">Discard Job</a>
-                <a class="pure-button primary_col_border button-xlarge" href="" onclick="return false;" id="job-form-submit-btn">Save Job</a>
-                <a class="pure-button primary_col_bg button-xlarge" href="" onclick="return false;" id="job-form-launch-btn">Save & Launch Job</a>
+                    <a class="pure-button primary_col_border button-xlarge" href="" onclick="return false;" id="job-form-submit-btn">Save Job</a>
+                    <a class="pure-button primary_col_bg button-xlarge" href="" onclick="return false;" id="job-form-launch-btn">Save & Launch Job</a>
+            </div>
         </div>
     </div>
 </div>
@@ -201,6 +229,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.2.6/vue.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.16.1/axios.min.js"></script>
 <script src="https://unpkg.com/vuetable-2@1.6.0"></script>
+
+<script src="https://unpkg.com/flatpickr"></script>
 
 <script src="index.js"></script>
 
