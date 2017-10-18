@@ -62,7 +62,12 @@ public class WorkerJobResource extends JobResource{
 		File jobResDir = Master.getJobResultsDir(jobId);
 
 		if (jobResDir != null) {
-			return Response.ok(uploadMultipleFiles(bodyParts, fileDispositions, jobResDir)).build();
+			try {
+				return Response.ok(uploadMultipleFiles(bodyParts, fileDispositions, jobResDir)).build();
+			} catch (Exception e) {
+				e.printStackTrace();
+				return Response.serverError().build();
+			}
 		}
 
 		return Response.status(Response.Status.NOT_FOUND).build();

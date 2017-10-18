@@ -8,6 +8,7 @@ import org.jclouds.ContextBuilder;
 import org.jclouds.openstack.nova.v2_0.NovaApi;
 import org.jclouds.openstack.nova.v2_0.domain.Flavor;
 import org.jclouds.openstack.nova.v2_0.domain.ServerCreated;
+import org.jclouds.openstack.nova.v2_0.domain.regionscoped.AvailabilityZone;
 import org.jclouds.openstack.nova.v2_0.features.FlavorApi;
 import org.jclouds.openstack.nova.v2_0.features.ServerApi;
 import org.jclouds.openstack.nova.v2_0.options.CreateServerOptions;
@@ -15,10 +16,7 @@ import org.jclouds.openstack.nova.v2_0.options.CreateServerOptions;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class JCloudsNova implements Closeable {
 
@@ -29,6 +27,7 @@ public class JCloudsNova implements Closeable {
 	public static final String DEFAULT_IMAGE_ID = "210b3c59-3238-4abf-9447-dffbcca5cd1b";
 
 	private static Map<String, Flavor> imageFlavours;
+	private static Set<AvailabilityZone> availableZones;
 	private static Flavor defaultFlavour;
 
 	private static Map<Flavor, ArrayList<Long>> instanceFlavourCreationTime;
@@ -104,7 +103,8 @@ public class JCloudsNova implements Closeable {
 		serverApi = novaApi.getServerApi(region);
 
 		if (!initiated) {
-			retrieveFlavourInfo();
+			retrieveAvailableFlavours();
+			retrieveAvailableRegions();
 			initiated = true;
 		}
     }
@@ -113,15 +113,14 @@ public class JCloudsNova implements Closeable {
 	// Initiation Methods
 	// ------------------------------------------------------------------------
 
-	private void retrieveFlavourInfo() {
+	private void retrieveAvailableFlavours() {
 		imageFlavours = new HashMap<>();
-		System.out.println(TAG + " Printing flavours new cloud instance");
 
-		FlavorApi flavors = novaApi.getFlavorApi("Melbourne");
+		FlavorApi flavors = novaApi.getFlavorApi(region);
 		for (Flavor flav : flavors.listInDetail().concat()) {
 			// This insures that only non-legacy flavours are included
 			if (!flav.getId().equals("")) {
-				System.out.println(TAG + " Added - "+ flav.toString());
+				System.out.println(TAG + " Added flavour - "+ flav.toString());
 				imageFlavours.put(flav.getName(), flav);
 				if (flav.getName().equals("m2.small")) {
 					System.out.println(TAG + " Default flavour - "+ flav.toString());
@@ -129,7 +128,11 @@ public class JCloudsNova implements Closeable {
 				}
 			}
 		}
+	}
 
+	private void retrieveAvailableRegions() {
+		availableZones = novaApi.getAvailabilityZoneApi(region).get().listAvailabilityZones().toSet();
+		availableZones.forEach((s -> System.out.printf("%s Added zone - %s%n", TAG, s)));
 	}
 
 	// ------------------------------------------------------------------------
@@ -156,7 +159,7 @@ public class JCloudsNova implements Closeable {
 					"java -jar ./worker.jar "+Master.HOSTNAME+" "+Master.PORT+" "+sharedWorker.toString()+" \n ";
 
 			CreateServerOptions options1= CreateServerOptions.Builder.keyPairName("KIT318")
-					.securityGroupNames("saas").userData(startupScript.getBytes());
+					.securityGroupNames("saas").userData(startupScript.getBytes()).availabilityZone("tasmania");
 
 			ServerCreated server=serverApi.create(workerId,imageId,flavour.getId(),options1);
 

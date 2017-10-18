@@ -15,12 +15,11 @@ public final class Master {
 	//================================================================================
 
 	public static final String TAG = "<Master>";
-	public static final String HOSTNAME = "nfshome.duckdns.org";
+	public static final String HOSTNAME = "130.56.250.15";
 	public static final int PORT = 8081;
 
 	private static LinkedList<Job> queuedSharedWorkerJobs;
 	private static LinkedList<Job> queuedUnsharedWorkerJobs;
-
 
 	private static Map<String, Job> inactiveJobs = Collections.synchronizedMap(new HashMap<String, Job>());
 	private static Map<String, Job> activeJobs = Collections.synchronizedMap(new HashMap<String, Job>());
@@ -559,17 +558,19 @@ public final class Master {
 			// Get job deadline in ms from now
 			Long jobDeadline = Job.getCalendarInMsFromNow(job.getDeadline());
 
-			// If job deadline is null or before estimated worker creation time => set job deadline to estimated worker creation time
+			// If job deadline is null or before estimated worker creation time (with default flavour)
+			// => set job deadline to estimated worker creation time
+			Long estimatedJobCompletionWithNewWorker =  estimatedTimeToCreateWorker+job.getEstimatedExecutionTimeForFlavourInMs(JCloudsNova.getDefaultFlavour());
 			// - this is because creating a new worker MAY BE SLOWER than assigning job to a worker with queued jobs
-			if (jobDeadline <= estimatedTimeToCreateWorker) {
-				jobDeadline = estimatedTimeToCreateWorker;
+			if (jobDeadline <= estimatedJobCompletionWithNewWorker) {
+				jobDeadline = estimatedJobCompletionWithNewWorker;
 			}
-
-			// Find worker with shortest queue - and worker which will allow job to finish before deadline
-			Iterator<MasterWorkerThread> activeWorkerIterator = activeUnsharedWorkers.iterator();
 
 			// Declarations for variables that are assigned/used in while loop - and also used in following if statement
 			MasterWorkerThread mostFreeWorker = null;
+
+			// Find worker with shortest queue - and worker which will allow job to finish before deadline
+			Iterator<MasterWorkerThread> activeWorkerIterator = activeUnsharedWorkers.iterator();
 
 			while (activeWorkerIterator.hasNext()) {
 				MasterWorkerThread currentWorker = activeWorkerIterator.next();

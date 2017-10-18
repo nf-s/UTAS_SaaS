@@ -226,7 +226,12 @@ public class JobResource {
 		File jobResDir = Master.getJobResourcesDir(jobId);
 
 		if (jobResDir != null) {
-			return Response.ok(uploadMultipleFiles(bodyParts, fileDispositions, jobResDir)).build();
+			try {
+				return Response.ok(uploadMultipleFiles(bodyParts, fileDispositions, jobResDir)).build();
+			} catch (Exception e) {
+				e.printStackTrace();
+				return Response.serverError().build();
+			}
 		}
 
 		return Response.status(Response.Status.NOT_FOUND).build();
@@ -243,7 +248,7 @@ public class JobResource {
 	}
 
 	// Multiple file upload
-	String uploadMultipleFiles(List<FormDataBodyPart> bodyParts, FormDataContentDisposition fileDisposition, File destinationDir) {
+	String uploadMultipleFiles(List<FormDataBodyPart> bodyParts, FormDataContentDisposition fileDisposition, File destinationDir) throws Exception {
 
 		StringBuffer fileDetails = new StringBuffer("");
 
