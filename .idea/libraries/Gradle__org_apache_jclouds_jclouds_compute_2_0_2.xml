@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: org.apache.jclouds:jclouds-compute:2.0.2">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.apache.jclouds/jclouds-compute/2.0.2/ea9d9a25d0d5f909237a0725515da1f33cf473a5/jclouds-compute-2.0.2.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.apache.jclouds/jclouds-compute/2.0.2/99389446287cbdda138886a67c9586a2b7a71944/jclouds-compute-2.0.2-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

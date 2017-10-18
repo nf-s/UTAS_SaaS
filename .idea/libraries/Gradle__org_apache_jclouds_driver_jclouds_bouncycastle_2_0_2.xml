@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: org.apache.jclouds.driver:jclouds-bouncycastle:2.0.2">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.apache.jclouds.driver/jclouds-bouncycastle/2.0.2/22eedc97345ce6aaa2152941d8b75c638e7fe4e3/jclouds-bouncycastle-2.0.2.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.apache.jclouds.driver/jclouds-bouncycastle/2.0.2/7737e00f4b11835cccb0b1edc057b021ff409a31/jclouds-bouncycastle-2.0.2-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

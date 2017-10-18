@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/comms/comms.iml" filepath="$PROJECT_DIR$/.idea/modules/comms/comms.iml" group="comms" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/comms/comms_main.iml" filepath="$PROJECT_DIR$/.idea/modules/comms/comms_main.iml" group="comms" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/comms/comms_test.iml" filepath="$PROJECT_DIR$/.idea/modules/comms/comms_test.iml" group="comms" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/master/master.iml" filepath="$PROJECT_DIR$/.idea/modules/master/master.iml" group="master" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/master/master_main.iml" filepath="$PROJECT_DIR$/.idea/modules/master/master_main.iml" group="master" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/master/master_test.iml" filepath="$PROJECT_DIR$/.idea/modules/master/master_test.iml" group="master" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/saas.iml" filepath="$PROJECT_DIR$/.idea/modules/saas.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/saas_main.iml" filepath="$PROJECT_DIR$/.idea/modules/saas_main.iml" group="saas" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/saas_test.iml" filepath="$PROJECT_DIR$/.idea/modules/saas_test.iml" group="saas" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/worker/worker.iml" filepath="$PROJECT_DIR$/.idea/modules/worker/worker.iml" group="worker" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/worker/worker_main.iml" filepath="$PROJECT_DIR$/.idea/modules/worker/worker_main.iml" group="worker" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/worker/worker_test.iml" filepath="$PROJECT_DIR$/.idea/modules/worker/worker_test.iml" group="worker" />
+    </modules>
+  </component>
+</project>

@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: org.apache.jclouds.api:openstack-nova:2.0.2">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.apache.jclouds.api/openstack-nova/2.0.2/4cde79b7adaf2fd21333b38b753b4d33a92ce392/openstack-nova-2.0.2.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.apache.jclouds.api/openstack-nova/2.0.2/99630c9950ae6554ba126af320dc6bfa57e19337/openstack-nova-2.0.2-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

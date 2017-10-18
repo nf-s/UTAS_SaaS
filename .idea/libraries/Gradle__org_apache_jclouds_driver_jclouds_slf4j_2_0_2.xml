@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: org.apache.jclouds.driver:jclouds-slf4j:2.0.2">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.apache.jclouds.driver/jclouds-slf4j/2.0.2/58bc906f75eab439a150ea1e3b2de5e1d96e1676/jclouds-slf4j-2.0.2.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.apache.jclouds.driver/jclouds-slf4j/2.0.2/8c7a6594f34aadfb33749cac910b64af3c5bed3/jclouds-slf4j-2.0.2-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

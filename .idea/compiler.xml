@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <bytecodeTargetLevel>
+      <module name="comms_main" target="1.8" />
+      <module name="comms_test" target="1.8" />
+      <module name="job_main" target="1.8" />
+      <module name="job_test" target="1.8" />
+      <module name="master_main" target="1.8" />
+      <module name="master_rest_main" target="1.8" />
+      <module name="master_rest_test" target="1.8" />
+      <module name="master_test" target="1.8" />
+      <module name="rest_main" target="1.8" />
+      <module name="rest_test" target="1.8" />
+      <module name="saas_main" target="1.8" />
+      <module name="saas_test" target="1.8" />
+      <module name="worker_main" target="1.8" />
+      <module name="worker_test" target="1.8" />
+    </bytecodeTargetLevel>
+  </component>
+</project>

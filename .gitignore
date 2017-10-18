@@ -51,7 +51,6 @@ gradle/
 temp/
 out/
 build/
-.idea/
 master_rest/job/
 job/
 

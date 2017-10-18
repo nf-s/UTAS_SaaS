@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: org.apache.jclouds:jclouds-scriptbuilder:2.0.2">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.apache.jclouds/jclouds-scriptbuilder/2.0.2/cd476b4c2e8d4c961a41d93b1bff0c8d0b05fc18/jclouds-scriptbuilder-2.0.2.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.apache.jclouds/jclouds-scriptbuilder/2.0.2/5fa1927c683eb00dc46786b306fe9789119abeb0/jclouds-scriptbuilder-2.0.2-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

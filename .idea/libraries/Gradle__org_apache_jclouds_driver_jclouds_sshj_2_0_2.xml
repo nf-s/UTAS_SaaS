@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: org.apache.jclouds.driver:jclouds-sshj:2.0.2">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.apache.jclouds.driver/jclouds-sshj/2.0.2/a3e62b9bdfc9abc40277b451668fb80f830e3fb7/jclouds-sshj-2.0.2.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.apache.jclouds.driver/jclouds-sshj/2.0.2/93c6c9df662531ebe5a8abb22af9ec0e4007bba4/jclouds-sshj-2.0.2-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

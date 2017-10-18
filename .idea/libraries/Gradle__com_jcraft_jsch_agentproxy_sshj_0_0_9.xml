@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: com.jcraft:jsch.agentproxy.sshj:0.0.9">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.jcraft/jsch.agentproxy.sshj/0.0.9/184fb22382e45db53b5a1845d02ed42b306716c0/jsch.agentproxy.sshj-0.0.9.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.jcraft/jsch.agentproxy.sshj/0.0.9/3852c615b4f789e1b966f0906614af25d78ac522/jsch.agentproxy.sshj-0.0.9-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

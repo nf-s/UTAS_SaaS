@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: org.apache.jclouds.api:openstack-keystone:2.0.2">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.apache.jclouds.api/openstack-keystone/2.0.2/87f7d918c2d3636f935ff08bcc3432e0f8379d53/openstack-keystone-2.0.2.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.apache.jclouds.api/openstack-keystone/2.0.2/980aa511f384f1506929da90cc78e2c741c203c2/openstack-keystone-2.0.2-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
