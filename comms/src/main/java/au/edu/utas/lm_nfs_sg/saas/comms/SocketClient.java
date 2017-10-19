@@ -40,7 +40,7 @@ public class SocketClient extends SocketCommunication{
 			}
 			// If connection is unsuccessful - exit program
 			catch (IOException e) {
-				System.out.println(TAG +" Could not connect to server "+connectionAttempt);
+				System.out.printf("%s Trying to connect to server (%d)%n", TAG, connectionAttempt);
 				connected = false;
 			}
 

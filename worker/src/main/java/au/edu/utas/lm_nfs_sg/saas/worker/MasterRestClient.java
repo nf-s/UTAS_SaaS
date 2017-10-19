@@ -94,8 +94,16 @@ class MasterRestClient {
 		return ret;
 	}
 
-	Boolean updateJobStatus(String jobId, JobControllerThread.Status  status) {
+	Boolean updateJobStatus(String jobId, Job.Status  status) {
 		return putJsonString(masterRootUrl+"job/"+jobId+"/status", "{\"status\":\""+status.toString()+"\"}");
+	}
+
+	//================================================================================
+	// Worker REST "adapter" functions
+	//================================================================================
+
+	Boolean updateWorkerStatus(String workerId, Worker.Status status) {
+		return putJsonString(masterRootUrl+workerId+"/status", "{\"status\":\""+status.toString()+"\"}");
 	}
 
 	//================================================================================

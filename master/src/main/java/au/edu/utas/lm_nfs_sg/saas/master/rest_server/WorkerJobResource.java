@@ -22,11 +22,11 @@ public class WorkerJobResource extends JobResource{
 	@Path("{id}/status")
 	@PUT
 	@Consumes(MediaType.APPLICATION_JSON)
-	public Response setJobStatus(@PathParam("id") String jobId, String jsonRequest) {
+	public Response setJobStatus(@PathParam("id") String jobid, String jsonRequest) {
 		String newStatus = ((JsonObject) new JsonParser().parse(jsonRequest)).get("status").getAsString();
 
 		if (newStatus != null) {
-			if (Master.updateJobStatus(jobId, newStatus)) {
+			if (Master.updateJobStatus(jobid, newStatus)) {
 				return Response.ok().build();
 			}
 		}

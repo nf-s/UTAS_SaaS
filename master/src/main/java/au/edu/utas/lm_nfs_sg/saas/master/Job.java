@@ -20,8 +20,10 @@ public class Job {
 	// Static enums, variables and methods
 	// ------------------------------------------------------------------------
 	enum Status {
-		INACTIVE, INITIATING, ASSIGNING, PREPARING, QUEUED, STARTING, RUNNING, FINISHING, FINISHED, STOPPING, STOPPED, MIGRATING, ERROR, DELETING, DELETED
+		INACTIVE, INITIATING, ASSIGNING, ASSIGNED, REJECTED_BY_WORKER, PREPARING_ON_WORKER, QUEUED_ON_WORKER, STARTING_ON_WORKER, RUNNING, FINISHING, FINISHED, STOPPING_ON_MASTER, STOPPING_ON_WORKER, STOPPED, MIGRATING, ERROR, DELETING_ON_MASTER, DELETING_ON_WORKER, DELETED
 	}
+
+	private static final String  TAG = "<Job>";
 
 	public static Map<String, String> jobClassStringMap = new HashMap<String, String>();
 
@@ -34,7 +36,7 @@ public class Job {
 	private String jobImageId;
 
 	private Boolean runOnSharedWorker;
-	private MasterWorkerThread worker;
+	private Worker worker;
 
 	private String jobDescription;
 
@@ -98,17 +100,21 @@ public class Job {
 	// General Accessors/Setters
 	// ------------------------------------------------------------------------
 
+	public String getTag() {
+		return TAG+" "+ getId();
+	}
+
 	public String getId() {
 		return id;
 	}
 
 	public String getJobClassString() { return jobClassString; }
 
-	void setWorkerProcess(MasterWorkerThread w) {
+	void setWorkerProcess(Worker w) {
 		worker = w;
 	}
 
-	MasterWorkerThread getWorker() {
+	Worker getWorker() {
 		return worker;
 	}
 
@@ -347,12 +353,11 @@ public class Job {
 	}
 
 	void setStatus(Status newStatus) {
-		setStatus(newStatus, null);
+		setStatus(newStatus, "");
 	}
 	void setStatus(Status newStatus, String newStatusMessage) {
-		//System.out.printf("<Job: %s> Status: %s%n", id, newStatus);
-		status = newStatus;
-		statusMessage = newStatusMessage;
+		if (Master.DEBUG)
+			System.out.printf("%s Updated status: %s %s%n" , getTag(), newStatus.toString(), newStatusMessage);
 
 		switch (newStatus) {
 			case RUNNING:
@@ -363,6 +368,8 @@ public class Job {
 				getWorker().jobFinished(this);
 				setFinishDate();
 				setUsedCpuTimeInMs();
+				if (Master.DEBUG)
+					System.out.printf("%s Execution time: %dms%n", getTag(), getUsedCpuTimeInMs());
 				break;
 			case STOPPED:
 				resetCpuTimes();
@@ -370,6 +377,9 @@ public class Job {
 
 		if (statusChangeListener != null)
 			statusChangeListener.onStatusChanged(this, newStatus);
+
+		status = newStatus;
+		statusMessage = newStatusMessage;
 	}
 
 	void setOnStatusChangeListener(StatusChangeListener listener) {

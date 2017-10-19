@@ -3,7 +3,9 @@ package au.edu.utas.lm_nfs_sg.saas.master;
 import com.google.gson.*;
 import org.jclouds.openstack.nova.v2_0.domain.Flavor;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.InputStreamReader;
 import java.util.*;
 
 /**
@@ -14,34 +16,37 @@ public final class Master {
 	// Properties
 	//================================================================================
 
+	public static final Boolean DEBUG = true;
 	public static final String TAG = "<Master>";
-	public static final String HOSTNAME = "130.56.250.15";
+	public static final String HOSTNAME = "nfshome.duckdns.org";
 	public static final int PORT = 8081;
+
+	private static Map<String, Job> inactiveJobs;
+	private static Map<String, Job> activeJobs;
 
 	private static LinkedList<Job> queuedSharedWorkerJobs;
 	private static LinkedList<Job> queuedUnsharedWorkerJobs;
 
-	private static Map<String, Job> inactiveJobs = Collections.synchronizedMap(new HashMap<String, Job>());
-	private static Map<String, Job> activeJobs = Collections.synchronizedMap(new HashMap<String, Job>());
-
-	private static LinkedList<MasterWorkerThread> activeSharedWorkers;
-	private static LinkedList<MasterWorkerThread> activeUnsharedWorkers;
+	private static Map<String, Worker> sharedWorkers;
+	private static Map<String, Worker> unsharedWorkers;
 
 	private static volatile Boolean creatingNewSharedWorker = false;
 	private static volatile Boolean creatingNewUnsharedWorker = false;
 	private static volatile Boolean assigningJobToSharedWorker = false;
 	private static volatile Boolean assigningJobToUnsharedWorker = false;
 
-
 	private static JCloudsNova jCloudsNova;
 	private static Boolean initiated = false;
 
 	static {
+		inactiveJobs = Collections.synchronizedMap(new HashMap<String, Job>());
+		activeJobs = Collections.synchronizedMap(new HashMap<String, Job>());
+
 		queuedSharedWorkerJobs = new LinkedList<Job>();
 		queuedUnsharedWorkerJobs = new LinkedList<Job>();
 
-		activeSharedWorkers = new LinkedList<MasterWorkerThread>();
-		activeUnsharedWorkers = new LinkedList<MasterWorkerThread>();
+		sharedWorkers = Collections.synchronizedMap(new HashMap<String, Worker>());
+		unsharedWorkers = Collections.synchronizedMap(new HashMap<String, Worker>());
 	}
 
 	public static void init(){
@@ -50,48 +55,9 @@ public final class Master {
 
 			initiated=true;
 
-			//activeUnsharedWorkers.add(new MasterWorkerThread("130.56.250.15", 8081, true, false));
-			//activeUnsharedWorkers.getFirst().startThread();
+			//unsharedWorkers.add(new Worker("130.56.250.15", 8081, true, false));
+			//unsharedWorkers.getFirst().connectToWorker();
 		}
-	}
-
-	public static void main(String[] args)
-	{
-		/*
-		while(true) {
-			try {
-				BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
-				// Read message from console
-				String message = in.readLine();
-				String command = message.split(" ")[0];
-
-				String jobId;
-				if (command.equals("new")) {
-					System.out.println(TAG + " New job id = " +
-							initJob(Integer.parseInt(message.split(" ")[1]), message.split(" ")[2], Integer.parseInt(message.split(" ")[3])));
-
-				} else if (command.equals("workers_status")) {
-					printWorkerStatus();
-
-				} else if (command.equals("jobs_status")) {
-					printJobStatus();
-
-				} else if (command.equals("stop")) {
-					stopJob(message.split(" ")[1]);
-
-				} else if (command.equals("add_worker")) {
-					addNewActiveWorker(new MasterWorkerThread(message.split(" ")[1], Integer.parseInt(message.split(" ")[2]), false));
-
-				} else if (command.equals("add_cloud_worker")) {
-					addNewActiveWorker(new MasterWorkerThread(message.split(" ")[1], Integer.parseInt(message.split(" ")[2]), true));
-
-				}
-
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
-		*/
 	}
 
 	//================================================================================
@@ -181,6 +147,23 @@ public final class Master {
 	}
 
 	//================================================================================
+	// Worker REST "Accessors"
+	//================================================================================
+
+	public static boolean updateWorkerStatus(String workerId, String workerStatus) {
+		Worker worker = getWorker(workerId);
+		if (worker!=null) {
+			try {
+				worker.setStatus(Worker.Status.valueOf(workerStatus));
+				return true;
+			} catch (IllegalArgumentException e) {
+				System.out.println(TAG+" Illegal Argument Exception - Setting worker status to "+workerStatus+" - workerId="+workerId);
+			}
+		}
+		return false;
+	}
+
+	//================================================================================
 	// Job List Functions - All methods are synchronised
 	//================================================================================
 
@@ -227,6 +210,52 @@ public final class Master {
 	}
 
 	//================================================================================
+	// Worker List Functions - All methods are synchronised
+	//================================================================================
+
+	// Get Worker - using worker id
+	private static synchronized Worker getWorker(String workerId) {
+		Worker worker = getSharedWorker(workerId);
+		if (worker == null) {
+			worker = getUnsharedWorker(workerId);
+		}
+		return worker;
+	}
+
+	private static synchronized Worker getSharedWorker(String workerId) {
+		if (sharedWorkers.containsKey(workerId)) {
+			return sharedWorkers.get(workerId);
+		}
+		return null;
+	}
+	private static synchronized Worker getUnsharedWorker(String workerId) {
+		if (unsharedWorkers.containsKey(workerId)) {
+			return unsharedWorkers.get(workerId);
+		}
+		return null;
+	}
+
+	private static synchronized void addWorkerToSharedWorkerList(Worker worker) {
+		sharedWorkers.put(worker.getId(), worker);
+	}
+
+	private static synchronized void addWorkerToUnsharedWorkerList(Worker worker) {
+		unsharedWorkers.put(worker.getId(), worker);
+	}
+
+	private static synchronized void removeSharedWorkerFromList(Worker worker) {
+		if (sharedWorkers.containsKey(worker.getId())) {
+			sharedWorkers.remove(worker.getId());
+		}
+	}
+
+	private static synchronized void removeUnsharedList(Worker worker) {
+		if (unsharedWorkers.containsKey(worker.getId())) {
+			unsharedWorkers.remove(worker.getId());
+		}
+	}
+
+	//================================================================================
 	// Job Functions
 	//================================================================================
 	public static Job createJob() {
@@ -254,15 +283,16 @@ public final class Master {
 		return false;
 	}
 
-	private static void activateJob(Job job, MasterWorkerThread worker) {
+	private static void activateJob(Job job, Worker worker) {
+		job.setStatus(Job.Status.ASSIGNED);
 		job.setWorkerProcess(worker);
 		job.setOnStatusChangeListener((job1, currentStatus) -> {
-			if (currentStatus == Job.Status.PREPARING) {
-				// Set status listener to Master
-				job.setOnStatusChangeListener((job2, currentStatus1) -> onJobStatusChanged(job2, currentStatus1));
-			} else if (currentStatus == Job.Status.ERROR) {
-				// Hanlde this...
-				System.out.println(job1.getId()+" could not be launched");
+			if (currentStatus == Job.Status.PREPARING_ON_WORKER) {
+
+			} else if (currentStatus == Job.Status.REJECTED_BY_WORKER) {
+				if(!job.getRunOnSharedWorker()) {
+					addJobToUnsharedJobAssignQueue(job, true);
+				}
 			}
 		});
 		worker.assignJob(job);
@@ -273,9 +303,8 @@ public final class Master {
 		if (job != null) {
 			removeJobFromActiveJobList(job);
 			addJobToInactiveJobList(job);
-			job.setStatus(Job.Status.STOPPING);
 			if (job.getStatus() != Job.Status.FINISHED && job.getUsedCpuTimeInMs() == 0) {
-				if (job.getWorker().startThread()) {
+				if (job.getWorker().connectToWorker()) {
 					job.getWorker().stopJob(job);
 					return true;
 				}
@@ -296,7 +325,7 @@ public final class Master {
 		}
 
 		if (job != null) {
-			MasterWorkerThread worker = job.getWorker();
+			Worker worker = job.getWorker();
 			if (worker != null) {
 				worker.deleteJob(job);
 			}
@@ -319,13 +348,12 @@ public final class Master {
 	private static void createSharedWorker(Flavor workerFlavour) {
 		creatingNewSharedWorker = true;
 
-		final MasterWorkerThread newWorker = new MasterWorkerThread(workerFlavour, true);
+		final Worker newWorker = new Worker(workerFlavour, true);
+		addWorkerToSharedWorkerList(newWorker);
 
 		newWorker.setOnStatusChangeListener((wrkr, currentStatus) -> {
 			// Worker created successfully
-			if (currentStatus == MasterWorkerThread.Status.ACTIVE) {
-				activeSharedWorkers.add(newWorker);
-				//assigningJobToSharedWorker = true;
+			if (currentStatus == Worker.Status.ACTIVE) {
 				creatingNewSharedWorker = false;
 				System.out.println(TAG + " new worker created!");
 
@@ -335,7 +363,7 @@ public final class Master {
 				}
 			}
 			// Worker creation failed
-			else if (currentStatus == MasterWorkerThread.Status.FAILURE) {
+			else if (currentStatus == Worker.Status.FAILURE) {
 				System.out.println(TAG+" failed to create worker - retrying");
 				createSharedWorker();
 			}
@@ -345,116 +373,36 @@ public final class Master {
 		new Thread(newWorker).start();
 	}
 
-	private static synchronized int calculateNewWorkerVCpuCount() {
-		/*
-		long avgDiffInStartToFinish100Jobs = 0;
-		long minutesBetweenLastAnd100thJob = 0;
-
-
-		if (last100NewJobsCreatedDates.size() > 2 && last100NewJobsFinishedDates.size() > 2) {
-			minutesBetweenLastAnd100thJob = last100NewJobsCreatedDates.size()*(last100NewJobsCreatedDates.getLast().getTimeInMillis()-last100NewJobsCreatedDates.getFirst().getTimeInMillis()/(1000*60));
-			// Average time between finishing jobs / Average time between starting jobs
-			avgDiffInStartToFinish100Jobs = (last100NewJobsFinishedDates.getFirst().getTimeInMillis() - last100NewJobsFinishedDates.getFirst().getTimeInMillis()) / (last100NewJobsCreatedDates.size())
-					/ (last100NewJobsCreatedDates.getFirst().getTimeInMillis() - last100NewJobsCreatedDates.getFirst().getTimeInMillis()) / (last100NewJobsCreatedDates.size());
-
-		}
-
-		// i.e. if jobs are being started quicker than they are being finished/stopped
-		if (avgDiffInStartToFinish100Jobs > 1 && minutesBetweenLastAnd100thJob > 60*100) {
-			return nextPowerOf2((int) Math.floor(avgDiffInStartToFinish100Jobs));
-		} else {
-			return 1;
-		}
-		*/
-		return 1;
-	}
-
-	// From https://stackoverflow.com/questions/5242533/fast-way-to-find-exponent-of-nearest-superior-power-of-2
-	private static int nextPowerOf2(final int a)
-	{
-		int b = 1;
-		while (b < a)
-		{
-			b = b << 1;
-		}
-
-		return b;
-	}
-
-	/*
-	private static void getAllWorkerCpuUsage(final Job job) {
-		getAllWorkerCpuUsage(job, false);}
-	private static void getAllWorkerCpuUsage(final Job job, Boolean continueAssigning) {
-		if ((!assigningJobToSharedWorker && !creatingNewSharedWorker && activeSharedWorkers.size() > 0)||continueAssigning) {
-			assigningJobToSharedWorker = true;
-			workerResourcesReceivedCount = 0;
-			Iterator<MasterWorkerThread> activeWorkerIterator = activeSharedWorkers.iterator();
-			while (activeWorkerIterator.hasNext()) {
-				MasterWorkerThread currentWorker = activeWorkerIterator.next();
-				if (startWorkerThread(currentWorker)) {
-					currentWorker.setOnResourcesReceivedListener(worker -> {
-						workerResourcesReceived(job);
-					});
-					currentWorker.setOnStatusChangeListener((worker, currentStatus) -> {
-						if (currentStatus == MasterWorkerThread.Status.UNREACHABLE || currentStatus == MasterWorkerThread.Status.ERROR) {
-							workerResourcesReceived(job);
-							System.out.println(TAG+" WorkerThread could not connect to "+currentWorker.getWorkerHost());
-						}
-					});
-					currentWorker.getCpuUsageFromWorker();
-				} else {
-					workerResourcesReceived(job);
-					System.out.println(TAG+" problem starting worker thread "+currentWorker.getWorkerHost());
-				}
-			}
-		} else if (assigningJobToSharedWorker) {
-			queuedSharedWorkerJobs.add(job);
-			System.out.println(TAG+" already assigning a job - job "+job.getId()+ " added to inactive job list");
-			System.out.println(TAG+" inactive job count = "+ queuedSharedWorkerJobs.size());
-		} else if (creatingNewSharedWorker) {
-			queuedSharedWorkerJobs.add(job);
-			System.out.println(TAG+" no workers available - master already creating a new worker - job "+job.getId()+ " added to inactive job list");
-			System.out.println(TAG+" inactive job count = "+ queuedSharedWorkerJobs.size());
-		} else {
-			queuedSharedWorkerJobs.add(job);
-			System.out.println(TAG+" no worker available - create new worker - job "+job.getId()+ " added to inactive job list");
-			System.out.println(TAG+" inactive job count = "+ queuedSharedWorkerJobs.size());
-			createSharedWorker();
-		}
-	}*/
-
 	private static void assignJobToSharedWorker(final Job job) {
 		assignJobToSharedWorker(job, false);
 	}
 
 	private static synchronized void assignJobToSharedWorker(final Job job, Boolean continueAssigning) {
-		if ((!assigningJobToSharedWorker && !creatingNewSharedWorker && activeSharedWorkers.size() > 0)||continueAssigning) {
+		if ((!assigningJobToSharedWorker && !creatingNewSharedWorker && sharedWorkers.size() > 0)||continueAssigning) {
 			assigningJobToSharedWorker = true;
 			job.setStatus(Job.Status.ASSIGNING);
 			// Find worker with least CPU usage
-			Iterator<MasterWorkerThread> activeWorkerIterator = activeSharedWorkers.iterator();
-			MasterWorkerThread mostFreeWorker = null;
+			Iterator<Worker> activeWorkerIterator = sharedWorkers.values().iterator();
+			Worker mostFreeWorker = null;
 			while (activeWorkerIterator.hasNext()) {
-				MasterWorkerThread currentWorker = activeWorkerIterator.next();
-				if (currentWorker.startThread()) {
-					if (mostFreeWorker == null && currentWorker.getStatus() == MasterWorkerThread.Status.ACTIVE)
+				Worker currentWorker = activeWorkerIterator.next();
+				if (currentWorker.connectToWorker() && currentWorker.getStatus() == Worker.Status.ACTIVE && currentWorker.isAvailable()) {
+					if (mostFreeWorker == null)
 						mostFreeWorker = currentWorker;
-					else if (currentWorker.getStatus() == MasterWorkerThread.Status.ACTIVE && currentWorker.getNumJobs() < mostFreeWorker.getNumJobs())
+					else if (currentWorker.getNumJobs() < mostFreeWorker.getNumJobs())
 						mostFreeWorker = currentWorker;
 				}
 			}
 
-			if (mostFreeWorker != null && mostFreeWorker.isAvailable()) {
-				if (mostFreeWorker.startThread()) {
-					System.out.println(TAG + " shared workerThread " + mostFreeWorker.getWorkerHost() + " is running");
+			if (mostFreeWorker != null) {
+				System.out.println(TAG + " shared workerThread " + mostFreeWorker.getHostWithPortString() + " is running");
 
-					activateJob(job, mostFreeWorker);
+				activateJob(job, mostFreeWorker);
 
-					// If there are inactive jobs to assign - keep assigning
-					if (queuedSharedWorkerJobs.size() != 0) {
-						System.out.println(TAG + " trying to assign an inactive shared job");
-						assignJobToSharedWorker(queuedSharedWorkerJobs.removeFirst(), true);
-					}
+				// If there are inactive jobs to assign - keep assigning
+				if (queuedSharedWorkerJobs.size() != 0) {
+					System.out.println(TAG + " trying to assign an inactive shared job");
+					assignJobToSharedWorker(queuedSharedWorkerJobs.removeFirst(), true);
 				}
 			}
 			// If no workers available - create new worker
@@ -509,16 +457,16 @@ public final class Master {
 		job.setEstimatedFinishDateInMsFromNow(job.getEstimatedExecutionTimeForFlavourInMs(workerFlavour)
 				+JCloudsNova.estimateCreationTimeInMs(workerFlavour));
 
-		final MasterWorkerThread newWorker = new MasterWorkerThread(workerFlavour, false);
+		final Worker newWorker = new Worker(workerFlavour, false);
+		addWorkerToUnsharedWorkerList(newWorker);
 
 		newWorker.setOnStatusChangeListener((wrkr, currentStatus) -> {
 			// Worker created successfully
-			if (currentStatus == MasterWorkerThread.Status.ACTIVE) {
+			if (currentStatus == Worker.Status.ACTIVE) {
 				System.out.println(TAG + " new unshared worker created!");
 
 				activateJob(job, newWorker);
 
-				activeUnsharedWorkers.add(newWorker);
 				creatingNewUnsharedWorker = false;
 
 				if (queuedUnsharedWorkerJobs.size() > 0) {
@@ -527,7 +475,7 @@ public final class Master {
 				}
 			}
 			// Worker creation failed
-			else if (currentStatus == MasterWorkerThread.Status.FAILURE) {
+			else if (currentStatus == Worker.Status.FAILURE) {
 				System.out.println(TAG+" failed to create unshared worker - retrying in 5 seconds");
 				try {
 					Thread.sleep(5000);
@@ -547,7 +495,7 @@ public final class Master {
 	}
 
 	private static synchronized void queueJobToUnsharedWorker(final Job job, Boolean continueAssigning) {
-		if ((!assigningJobToUnsharedWorker && activeUnsharedWorkers.size() > 0) ||continueAssigning)
+		if ((!assigningJobToUnsharedWorker && unsharedWorkers.size() > 0) ||continueAssigning)
 		{
 			assigningJobToUnsharedWorker = true;
 			job.setStatus(Job.Status.ASSIGNING);
@@ -567,14 +515,14 @@ public final class Master {
 			}
 
 			// Declarations for variables that are assigned/used in while loop - and also used in following if statement
-			MasterWorkerThread mostFreeWorker = null;
+			Worker mostFreeWorker = null;
 
 			// Find worker with shortest queue - and worker which will allow job to finish before deadline
-			Iterator<MasterWorkerThread> activeWorkerIterator = activeUnsharedWorkers.iterator();
+			Iterator<Worker> workerIterator = sharedWorkers.values().iterator();
 
-			while (activeWorkerIterator.hasNext()) {
-				MasterWorkerThread currentWorker = activeWorkerIterator.next();
-				if (currentWorker.getStatus() == MasterWorkerThread.Status.ACTIVE) {
+			while (workerIterator.hasNext()) {
+				Worker currentWorker = workerIterator.next();
+				if (currentWorker.connectToWorker() && currentWorker.getStatus() == Worker.Status.ACTIVE) {
 					// Get job estimated execution time according to the worker's instance flavour (i.e. VM config - VPUs, RAM...)
 					Long jobEstimatedExecutionTime = job.getEstimatedExecutionTimeForFlavourInMs(currentWorker.getInstanceFlavour());
 
@@ -596,8 +544,8 @@ public final class Master {
 			}
 
 			// If a suitable worker was found
-			if (mostFreeWorker != null && mostFreeWorker.isAvailable()) {
-				if (mostFreeWorker.startThread()) {
+			if (mostFreeWorker != null) {
+				if (mostFreeWorker.connectToWorker()) {
 					job.setEstimatedFinishDateInMsFromNow(mostFreeWorker.estimateQueueCompletionTimeInMs()
 							+job.getEstimatedExecutionTimeForFlavourInMs(mostFreeWorker.getInstanceFlavour()));
 
@@ -637,8 +585,17 @@ public final class Master {
 	}
 
 	private synchronized static void addJobToUnsharedJobAssignQueue(Job job) {
-		job.setStatus(Job.Status.ASSIGNING, "In queue");
-		queuedUnsharedWorkerJobs.add(job);
+		addJobToUnsharedJobAssignQueue(job, false);
+	}
+	private synchronized static void addJobToUnsharedJobAssignQueue(Job job, Boolean addFirst) {
+		if (addFirst) {
+			queuedUnsharedWorkerJobs.addFirst(job);
+			job.setStatus(Job.Status.ASSIGNING, "In queue (1)");
+		} else {
+			queuedUnsharedWorkerJobs.addLast(job);
+			job.setStatus(Job.Status.ASSIGNING, "In queue ("+queuedUnsharedWorkerJobs.size()+")");
+		}
+
 		System.out.printf("%s job %s added to inactive job list \n queued unshared worker job count = %d%n", TAG, job.getId(), queuedUnsharedWorkerJobs.size());
 	}
 
@@ -649,73 +606,45 @@ public final class Master {
 	}
 
 	//================================================================================
-	// Job/Worker Status changed functions
-	//================================================================================
-
-
-	private static void onJobStatusChanged(Job job, Job.Status currentStatus) {
-		switch (currentStatus) {
-			case ERROR:
-				System.out.println(TAG+" job "+job.getId()+" encountered an error");
-				break;
-			case STARTING:
-				System.out.println(TAG+" job "+job.getId()+" is starting");
-				break;
-			case PREPARING:
-				System.out.println(TAG+" job "+job.getId()+" is preparing on worker");
-				break;
-			case RUNNING:
-				System.out.println(TAG+" job "+job.getId()+" is running");
-				break;
-			case FINISHED:
-				System.out.println(TAG+" job "+job.getId()+" is finished");
-				System.out.println(TAG+" job "+job.getId()+" cpu time in ms = "+job.getUsedCpuTimeInMs());
-				break;
-			default:
-				System.out.printf(String.format("%s job %s status updated to %s %n", TAG, job.getId(), currentStatus.toString()));
-		}
-	}
-
-	private static void onWorkerStatusChanged(MasterWorkerThread worker, MasterWorkerThread.Status currentStatus) {
-		switch (currentStatus) {
-			case ERROR:
-				System.out.println(TAG+" worker "+worker.getWorkerHost()+" encountered an error");
-				break;
-			case INITIATING:
-				System.out.println(TAG+" worker "+worker.getWorkerHost()+" is initiating");
-				break;
-			case UNREACHABLE:
-				System.out.println(TAG+" worker "+worker.getWorkerHost()+" is unreachable");
-				break;
-			case ACTIVE:
-				System.out.println(TAG+" worker "+worker.getWorkerHost()+" is ACTIVE!!");
-				break;
-		}
-	}
-
-	//================================================================================
 	// Debug functions
 	//================================================================================
 
-	static synchronized String printJobStatus() {
+	private static synchronized String printJobStatus() {
 		String returnStr = "";
 		returnStr += "ACTIVE jobs\n";
 		for (Job job : activeJobs.values()) {
-			returnStr += job.getId()+"\t"+job.getStatus().toString()+"\t"+job.getWorker().getWorkerHost()+"\n";
+			returnStr += job.getId()+"\t"+job.getStatus().toString()+"\t"+job.getWorker().getHostWithPortString()+"\n";
 		}
+
 		returnStr += "\nINACTIVE jobs\n";
+		for (Job job2 : inactiveJobs.values()) {
+			returnStr += job2.getId()+"\t"+job2.getStatus().toString()+"\n";
+		}
+
+		returnStr += "\nQUEUED_ON_WORKER shared jobs\n";
 		for (Job job2 : queuedSharedWorkerJobs) {
 			returnStr += job2.getId()+"\t"+job2.getStatus().toString()+"\n";
 		}
+
+		returnStr += "\nQUEUED_ON_WORKER unshared jobs\n";
+		for (Job job2 : queuedUnsharedWorkerJobs) {
+			returnStr += job2.getId()+"\t"+job2.getStatus().toString()+"\n";
+		}
+
 		System.out.println(returnStr);
 		return returnStr;
 	}
 
-	static synchronized String printWorkerStatus() {
+	private static synchronized String printWorkerStatus() {
 		String returnStr = "";
-		returnStr += "ACTIVE workers\n";
-		for (MasterWorkerThread worker : activeSharedWorkers) {
-			returnStr += worker.getWorkerHost()+"\t"+worker.getStatus().toString()+"\n";
+		returnStr += "ACTIVE shared workers\n";
+		for (Worker worker : sharedWorkers.values()) {
+			returnStr += worker.getHostWithPortString()+"\t"+worker.getStatus().toString()+"\n";
+		}
+
+		returnStr += "\n ACTIVE unshared workers\n";
+		for (Worker worker2 : unsharedWorkers.values()) {
+			returnStr += worker2.getHostWithPortString()+"\t"+worker2.getStatus().toString()+"\n";
 		}
 		System.out.println(returnStr);
 		return returnStr;

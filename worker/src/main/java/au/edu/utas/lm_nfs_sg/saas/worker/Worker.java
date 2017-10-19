@@ -10,33 +10,52 @@ import static java.util.Collections.*;
 public final class Worker {
 	static final String TAG = "<Worker>";
 
+	enum Status {
+		INITIATING, ACTIVE, FAILURE, MIGRATING
+	}
+
+	private static String id;
+
 	private static SocketServer1To1 masterSocketServer;
 	private static MasterRestClient masterRestClient;
 
-	public static String masterHostname;
+	private static String masterHostname;
 
-	private static Map<String, JobControllerThread> jobs;
-	private static Queue<JobControllerThread> jobQueue;
+	private static Map<String, Job> jobs;
+	private static Queue<Job> jobQueue;
 
 	private static Boolean sharedWorker;
+	private static Status status;
 
+
+	/**
+	 *  ARGUMENTS (expects 4):
+	 *  1 - Worker id (string)
+	 *  2 - Master hostname (string)
+	 *  3 - Master socket port (integer between 1024 and 65535)
+	 *  4 - Shared worker (boolean - true = shared worker, false = unshared worker)
+	 *
+	 */
 	public static void main(String[] args) {
-		if (args.length >= 3) {
-			masterHostname = args[0];
+		if (args.length >= 4) {
+			status = Status.INITIATING;
+
+			id = args[0];
+			masterHostname = args[1];
 
 			int port = 0;
 			try {
-				port = Integer.parseInt(args[1]);
+				port = Integer.parseInt(args[2]);
 				// If invalid port number is provided - exit program
 				if (port < 1024 || port > 65535) {
 					throw new NumberFormatException();
 				}
 			} catch (NumberFormatException e) {
-				System.out.println("Argument '" + args[1] + "' is an invalid port number - expecting an integer between 1024 and 65535");
+				System.out.println("Argument '" + args[2] + "' is an invalid port number - expecting an integer between 1024 and 65535");
 				System.exit(-1);
 			}
 
-			sharedWorker = Boolean.parseBoolean(args[2]);
+			sharedWorker = Boolean.parseBoolean(args[3]);
 
 			MasterRestClient.setMasterHostname(masterHostname);
 			masterRestClient = new MasterRestClient("WorkerMain");
@@ -47,12 +66,12 @@ public final class Worker {
 			Thread masterSocketThread = new Thread(masterSocketServer);
 			masterSocketThread.start();
 
-			jobs = synchronizedMap(new HashMap<String, JobControllerThread>());
+			jobs = synchronizedMap(new HashMap<String, Job>());
 			if(!sharedWorker) {
-				jobQueue = new ConcurrentLinkedQueue<JobControllerThread>();
+				jobQueue = new ConcurrentLinkedQueue<Job>();
 			}
 
-			masterSocketServer.sendMessage("ready");
+			setStatus(Status.ACTIVE);
 
 			try {
 				masterSocketThread.join();
@@ -103,7 +122,14 @@ public final class Worker {
 		}
 	}
 
-	static JobControllerThread getJobController(String jobId) {
+	private static void setStatus(Status newStatus) {
+		if (status!=newStatus) {
+			status = newStatus;
+			masterRestClient.updateWorkerStatus(id, newStatus);
+		}
+	}
+
+	private static Job getJob(String jobId) {
 		if (jobs.containsKey(jobId)) {
 			return jobs.get(jobId);
 		} else {
@@ -115,12 +141,12 @@ public final class Worker {
 	private static void launchNewJob(String jobId) {
 		System.out.println(TAG+" starting job "+jobId);
 
-		JobControllerThread newJobThread = new JobControllerThread(jobId,!sharedWorker);
+		Job newJobThread = new Job(jobId,!sharedWorker);
 
 		jobs.put(jobId, newJobThread);
 		if(!sharedWorker) {
 			newJobThread.setOnStatusChangeListener((job, currentStatus) -> {
-				if (currentStatus == JobControllerThread.Status.FINISHING || currentStatus == JobControllerThread.Status.ERROR) {
+				if (currentStatus == Job.Status.FINISHING || currentStatus == Job.Status.ERROR) {
 					popJobFromQueue(job);
 					newJobThread.setOnStatusChangeListener(null);
 				}
@@ -139,7 +165,7 @@ public final class Worker {
 	}
 
 	private static void stopJob(String jobId, Boolean deleteFiles) {
-		JobControllerThread job = getJobController(jobId);
+		Job job = getJob(jobId);
 
 		if (job != null) {
 			System.out.println(TAG+" stopping job "+jobId);
@@ -151,11 +177,11 @@ public final class Worker {
 		}
 	}
 
-	private static void popJobFromQueue(JobControllerThread oldJob) {
-		if (jobQueue.peek()==oldJob) {
+	private static void popJobFromQueue(Job finishedJob) {
+		if (jobQueue.peek()==finishedJob) {
 			jobQueue.poll();
 		} else {
-			jobQueue.remove(oldJob);
+			jobQueue.remove(finishedJob);
 		}
 
 		if (jobQueue.size() > 0 ) {
