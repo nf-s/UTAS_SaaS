@@ -1,6 +1,11 @@
 package au.edu.utas.lm_nfs_sg.saas.worker;
 
+import au.edu.lm_nf_sg.saas.common.job.JobStatus;
+import au.edu.lm_nf_sg.saas.common.worker.WorkerStatus;
+import au.edu.lm_nf_sg.saas.common.worker.WorkerType;
 import au.edu.utas.lm_nfs_sg.saas.comms.SocketServer1To1;
+import au.edu.utas.lm_nfs_sg.saas.worker.rest.MasterRestClient;
+import au.edu.utas.lm_nfs_sg.saas.worker.job.Job;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -8,13 +13,12 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import static java.util.Collections.*;
 
 public final class Worker {
-	static final String TAG = "<Worker>";
 
-	enum Status {
-		INITIATING, ACTIVE, FAILURE, MIGRATING
-	}
+	private static final String TAG = "<Worker>";
 
 	private static String id;
+	private static WorkerStatus status;
+	private static WorkerType type;
 
 	private static SocketServer1To1 masterSocketServer;
 	private static MasterRestClient masterRestClient;
@@ -24,21 +28,17 @@ public final class Worker {
 	private static Map<String, Job> jobs;
 	private static Queue<Job> jobQueue;
 
-	private static Boolean sharedWorker;
-	private static Status status;
-
-
 	/**
 	 *  ARGUMENTS (expects 4):
 	 *  1 - Worker id (string)
 	 *  2 - Master hostname (string)
 	 *  3 - Master socket port (integer between 1024 and 65535)
-	 *  4 - Shared worker (boolean - true = shared worker, false = unshared worker)
+	 *  4 - Worker Type (Type enum - as string)
 	 *
 	 */
 	public static void main(String[] args) {
 		if (args.length >= 4) {
-			status = Status.INITIATING;
+			status = WorkerStatus.INITIATING;
 
 			id = args[0];
 			masterHostname = args[1];
@@ -55,7 +55,7 @@ public final class Worker {
 				System.exit(-1);
 			}
 
-			sharedWorker = Boolean.parseBoolean(args[3]);
+			type = WorkerType.valueOf(args[3]);
 
 			MasterRestClient.setMasterHostname(masterHostname);
 			masterRestClient = new MasterRestClient("WorkerMain");
@@ -67,11 +67,11 @@ public final class Worker {
 			masterSocketThread.start();
 
 			jobs = synchronizedMap(new HashMap<String, Job>());
-			if(!sharedWorker) {
+			if(type==WorkerType.PRIVATE) {
 				jobQueue = new ConcurrentLinkedQueue<Job>();
 			}
 
-			setStatus(Status.ACTIVE);
+			setStatus(WorkerStatus.ACTIVE);
 
 			try {
 				masterSocketThread.join();
@@ -122,7 +122,7 @@ public final class Worker {
 		}
 	}
 
-	private static void setStatus(Status newStatus) {
+	private static void setStatus(WorkerStatus newStatus) {
 		if (status!=newStatus) {
 			status = newStatus;
 			masterRestClient.updateWorkerStatus(id, newStatus);
@@ -141,27 +141,38 @@ public final class Worker {
 	private static void launchNewJob(String jobId) {
 		System.out.println(TAG+" starting job "+jobId);
 
-		Job newJobThread = new Job(jobId,!sharedWorker);
+		Job newJob = new Job(jobId,true);
 
-		jobs.put(jobId, newJobThread);
-		if(!sharedWorker) {
-			newJobThread.setOnStatusChangeListener((job, currentStatus) -> {
-				if (currentStatus == Job.Status.FINISHING || currentStatus == Job.Status.ERROR) {
-					popJobFromQueue(job);
-					newJobThread.setOnStatusChangeListener(null);
+		jobs.put(jobId, newJob);
+		newJob.setStatus(JobStatus.ASSIGNED_ON_WORKER);
+
+		switch(type) {
+			// If this is a PRIVATE worker - only 1 job can be running at a time
+			case PRIVATE:
+				newJob.setOnStatusChangeListener((job, currentStatus) -> {
+					if (currentStatus == JobStatus.FINISHING || currentStatus == JobStatus.ERROR) {
+						popJobFromQueue(job);
+						newJob.setOnStatusChangeListener(null);
+					}
+				});
+				// If this job queue is empty - execute job straight away
+				if (jobQueue.size() == 0) {
+					newJob.setQueued(false);
+					System.out.println(TAG+" queue is empty, starting job immediately");
+				} else {
+					System.out.println(TAG+" adding job to queue");
 				}
-			});
-			// If this job queue is empty - execute job straight away
-			if (jobQueue.size() == 0) {
-				newJobThread.setQueued(false);
-				System.out.println(TAG+" queue is empty, starting job immediately");
-			} else {
-				System.out.println(TAG+" adding job to queue");
-			}
-			jobQueue.add(newJobThread);
-			System.out.println(TAG+" queue length = "+jobQueue.size());
+				jobQueue.add(newJob);
+				System.out.println(TAG+" queue length = "+jobQueue.size());
+				break;
+
+			// If this is a PUBLIC worker - execute job straight away
+			case PUBLIC:
+				newJob.setQueued(false);
+				break;
 		}
-		newJobThread.startThread();
+
+		newJob.startThread();
 	}
 
 	private static void stopJob(String jobId, Boolean deleteFiles) {
@@ -171,7 +182,7 @@ public final class Worker {
 			System.out.println(TAG+" stopping job "+jobId);
 			job.stopJob(deleteFiles);
 
-			if (!sharedWorker) {
+			if (type==WorkerType.PRIVATE) {
 				popJobFromQueue(job);
 			}
 		}

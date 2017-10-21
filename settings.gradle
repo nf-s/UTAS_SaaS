@@ -2,3 +2,5 @@ rootProject.name = 'saas'
 include 'master'
 include 'worker'
 include 'comms'
+include 'common'
+

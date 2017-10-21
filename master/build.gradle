@@ -56,6 +56,7 @@ dependencies {
     // End REST + HTTP
 
     compile project(':comms')
+    compile project(':common')
 
     //testCompile group: 'junit', name: 'junit', version: '4.11'
 }

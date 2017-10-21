@@ -48,14 +48,19 @@ Temporary Items
 
 .gradle/
 gradle/
-temp/
-out/
-build/
-master_rest/job/
-job/
+/gradlew
+/gradlew.bat
 
+build/
+out/
+master/src/main/resources/nectarcloud_config.json
 
 master/src/main/webapp/js/dropzone.js
 master/src/main/webapp/js/brutusin-json-forms.js
+/master/src/main/webapp/js/mainNOTUSED.js
+master/src/main/webapp/worker/
 
-master/src/main/resources/nectarcloud_config.json
+/master/job/
+
+
+master/src/main/webapp/worker/worker-1.0-all.jar
