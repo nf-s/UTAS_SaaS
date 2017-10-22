@@ -26,7 +26,7 @@ public class WorkerJobResource extends JobResource{
 		String newStatus = ((JsonObject) new JsonParser().parse(jsonRequest)).get("status").getAsString();
 
 		if (newStatus != null) {
-			if (Master.updateJobStatus(jobid, newStatus)) {
+			if (Master.updateJobStatusFromWorkerNode(jobid, newStatus)) {
 				return Response.ok().build();
 			}
 		}

@@ -10,8 +10,12 @@ import au.edu.utas.lm_nfs_sg.saas.master.worker.Worker;
 import com.google.gson.*;
 import org.jclouds.openstack.nova.v2_0.domain.Flavor;
 
+import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletContextListener;
+import javax.servlet.annotation.WebListener;
 import java.io.File;
 import java.util.*;
+import java.util.concurrent.ScheduledExecutorService;
 
 /**
  * Created by nico on 25/05/2017.
@@ -26,6 +30,8 @@ public final class Master {
 	public static final String HOSTNAME = "nfshome.duckdns.org";
 	public static final int PORT = 8081;
 
+	private static ScheduledExecutorService scheduler;
+
 	// Minimum job deadline = 10 minutes
 	public static final int MINIMUM_JOB_DEADLINE_IN_MS_FROM_NOW = 600000;
 
@@ -35,8 +41,8 @@ public final class Master {
 	private static Map<WorkerType, LinkedList<Job>> queuedUnassignedJobs;
 	private static Map<WorkerType, Map<String, Worker>> workers;
 
-	// This Map of Booleans is used to keep track of which WorkerTypes are assigning jobs
-	// - Only one job per WorkerType can be assigning at any one time
+	// This Map of Booleans is used to keep track of which WorkerTypes are preparingForAssigning jobs
+	// - Only one job per WorkerType can be preparingForAssigning at any one time
 	private static volatile Map<WorkerType, Boolean> isAssigningJob;
 
 	private static JCloudsNova jCloudsNova;
@@ -68,19 +74,22 @@ public final class Master {
 		}
 	}
 
+	public static void shutdown() {
+		System.out.println(TAG+" Shutting down all worker threads...");
+		// For each worker map -> for each worker -> stopRunning()
+		workers.forEach((workerType,workers)->workers.forEach((id, worker)->worker.stopRunning()));
+
+		jCloudsNova.terminateAll();
+	}
+
 	//================================================================================
 	// Job REST "Accessors"
 	//================================================================================
 
-	public static boolean updateJobStatus(String jobId, String jobStatus) {
+	public static boolean updateJobStatusFromWorkerNode(String jobId, String jobStatus) {
 		Job job = getJob(jobId);
 		if (job!=null) {
-			try {
-				job.setStatus(JobStatus.valueOf(jobStatus));
-				return true;
-			} catch (IllegalArgumentException e) {
-				System.out.println(TAG+" Illegal Argument Exception - Setting job status to "+jobStatus+" - jobId="+jobId);
-			}
+			return job.updateStatusFromWorkerNode(jobStatus);
 		}
 		return false;
 	}
@@ -154,15 +163,10 @@ public final class Master {
 	// Worker REST "Accessors"
 	//================================================================================
 
-	public static boolean updateWorkerStatus(String workerId, String workerStatus) {
+	public static boolean updateWorkerStatusFromWorkerNode(String workerId, String workerStatus) {
 		Worker worker = getWorker(workerId);
 		if (worker!=null) {
-			try {
-				worker.setStatus(WorkerStatus.valueOf(workerStatus));
-				return true;
-			} catch (IllegalArgumentException e) {
-				System.out.println(TAG+" Illegal Argument Exception - Setting worker status to "+workerStatus+" - workerId="+workerId);
-			}
+			return worker.updateStatusFromWorkerNode(workerStatus);
 		}
 		return false;
 	}
@@ -254,9 +258,8 @@ public final class Master {
 	public static Boolean activateJob(String jobId, JsonObject launchOptions) {
 		Job job = getInactiveJob(jobId);
 		if (job != null) {
-			job.setStatus(JobStatus.INITIATING);
+			job.activateWithJson(launchOptions);
 
-			job.setLaunchOptions(launchOptions);
 			removeJobFromInactiveJobList(job);
 			addJobToActiveJobList(job);
 			assignJobToWorker(job);
@@ -265,10 +268,8 @@ public final class Master {
 		return false;
 	}
 
-	private static void assignJobToWorker(Job job, Worker worker) {
-		job.setStatus(JobStatus.ASSIGNED_ON_MASTER);
-
-		job.setWorker(worker);
+	private static void assignJob(Job job, Worker worker) {
+		job.assignToWorker(worker);
 		job.setOnStatusChangeListener((job1, currentStatus) -> {
 			switch (currentStatus) {
 				case REJECTED_BY_WORKER:
@@ -288,6 +289,7 @@ public final class Master {
 			removeJobFromActiveJobList(job);
 			addJobToInactiveJobList(job);
 			if (job.getStatus() != JobStatus.FINISHED && job.getUsedCpuTimeInMs() == 0) {
+				job.stop();
 				job.getWorker().stopJob(job);
 				return true;
 			}
@@ -312,7 +314,7 @@ public final class Master {
 				worker.deleteJob(job);
 			}
 			// Need to also delete from worker
-			job.deleteJob();
+			job.delete();
 
 			job = null;
 			return true;
@@ -331,14 +333,14 @@ public final class Master {
 	private static Worker createNewWorker(WorkerType workerType, Flavor workerFlavour, int attempt) {
 		System.out.println(TAG+" create new "+workerType.toString()+" worker ");
 
-		final Worker newWorker = new Worker(workerFlavour, workerType);
+		Worker newWorker = new Worker(workerFlavour, workerType);
 		addWorker(newWorker);
 
-		newWorker.setOnStatusChangeListener((wrkr, currentStatus) -> {
+		newWorker.setOnStatusChangeListener((worker, currentStatus) -> {
 			// Worker created successfully
 			if (currentStatus == WorkerStatus.ACTIVE) {
 				System.out.println(TAG + " new "+workerType.toString()+" worker created!");
-				newWorker.setOnStatusChangeListener(null);
+				worker.setOnStatusChangeListener(null);
 			}
 			// Worker creation failed
 			else if (currentStatus == WorkerStatus.FAILURE) {
@@ -366,58 +368,56 @@ public final class Master {
 	}
 
 	private static synchronized void assignJobToWorker(final Job job, Boolean placeFirstInQueue, Boolean continueAssigning) {
-		job.setStatus(JobStatus.ASSIGNING);
+		job.preparingForAssigning();
 		WorkerType workerType = job.getWorkerType();
 
-		if ((!isAssigningJob.get(workerType) && workers.get(workerType).size() > 0) ||continueAssigning)
+		if (!isAssigningJob.get(workerType) ||continueAssigning)
 		{
 			isAssigningJob.put(workerType, true);
 			Worker mostFreeWorker = null;
 
-			switch (workerType) {
-				case PRIVATE:
-					// Find worker with shortest queue - and worker which will allow job to finish before deadline
-					mostFreeWorker = workers.get(workerType).values().stream()
-							// Filter workers with queue completion times GREATER THAN
-							// the job deadline - estimated job execution time
-							.filter(worker -> worker.estimateQueueCompletionTimeInMs() <=
-									Math.max(Job.getCalendarInMsFromNow(job.getDeadline()),MINIMUM_JOB_DEADLINE_IN_MS_FROM_NOW)
-											-job.getEstimatedExecutionTimeForFlavourInMs(worker.getInstanceFlavour()))
-							// Sort all available workers to find the worker with the smallest queue completion time
-							.sorted(Comparator.comparing(Worker::estimateQueueCompletionTimeInMs))
-							.findFirst().orElse(null);
-					break;
-				case PUBLIC:
-					mostFreeWorker = workers.get(workerType).values().stream()
-							.filter(Worker::isAvailable)
-							.sorted(Comparator.comparing(Worker::getNumJobs))
-							.findFirst().orElse(null);
+			if (workers.get(workerType).size() > 0) {
+				switch (workerType) {
+					case PRIVATE:
+						// Find worker with shortest queue - and worker which will allow job to finish before deadline
+						mostFreeWorker = workers.get(workerType).values().stream()
+								// Filter workers with queue completion times GREATER THAN
+								// the job deadline - estimated job execution time
+								.filter(worker -> worker.estimateQueueCompletionTimeInMs() <=
+										Math.max(Job.getCalendarInMsFromNow(job.getDeadline()), MINIMUM_JOB_DEADLINE_IN_MS_FROM_NOW)
+												- job.getEstimatedExecutionTimeForFlavourInMs(worker.getInstanceFlavour()))
+								// Sort all available workers to find the worker with the smallest queue completion time
+								.sorted(Comparator.comparing(Worker::estimateQueueCompletionTimeInMs))
+								.findFirst().orElse(null);
+						break;
+					case PUBLIC:
+						mostFreeWorker = workers.get(workerType).values().stream()
+								.filter(Worker::isAvailable)
+								.sorted(Comparator.comparing(Worker::getNumJobs))
+								.findFirst().orElse(null);
+				}
 			}
 
-			// If a suitable worker was found
+			// If a suitable worker was found - assign job
 			if (mostFreeWorker != null) {
-				assignJobToWorker(job, mostFreeWorker);
-			} else {
-			// If no suitable worker was found - create new worker
-				assignJobToWorker(job, createNewWorker(workerType, JCloudsNova.getDefaultFlavour()));
+				assignJob(job, mostFreeWorker);
+			}
+			// If no suitable worker was found - create new worker and assign job
+			else {
+				assignJob(job, createNewWorker(workerType, JCloudsNova.getDefaultFlavour()));
 			}
 
-			// If there are inactive jobs to assign - keep assigning
+			// If there are inactive jobs to assign - keep preparingForAssigning
 			if (queuedUnassignedJobs.get(workerType).size() != 0) {
 				assignJobToWorker(popJobFromAssignQueue(workerType), false, true);
 			} else {
 				isAssigningJob.put(workerType, false);
 			}
 		}
-
-		// If already assigning a job - add to queue
+		// If already preparingForAssigning a job - add to queue
 		else if (isAssigningJob.get(workerType)) {
-			System.out.println(TAG+" can't assign job - already assigning a "+workerType.toString()+" job");
+			System.out.println(TAG+" can't assign job - already preparingForAssigning a "+workerType.toString()+" job");
 			addJobToAssignQueue(job, placeFirstInQueue);
-		}
-		// If no active workers
-		else {
-			assignJobToWorker(job, createNewWorker(workerType, JCloudsNova.getDefaultFlavour()));
 		}
 	}
 
@@ -428,10 +428,8 @@ public final class Master {
 		WorkerType workerType = job.getWorkerType();
 		if (placeFirstInQueue) {
 			queuedUnassignedJobs.get(workerType).addFirst(job);
-			job.setStatus(JobStatus.ASSIGNING, "In queue (1)");
 		} else {
 			queuedUnassignedJobs.get(workerType).addLast(job);
-			job.setStatus(JobStatus.ASSIGNING, "In queue ("+queuedUnassignedJobs.get(workerType).size()+")");
 		}
 
 		System.out.printf("%s job %s added to inactive job list \n queued "+workerType.toString()+" worker job count = %d%n", TAG, job.getId(), queuedUnassignedJobs.get(workerType).size());
@@ -439,7 +437,7 @@ public final class Master {
 
 	private synchronized static Job popJobFromAssignQueue(WorkerType workerType) {
 		Job job = queuedUnassignedJobs.get(workerType).removeFirst();
-		System.out.printf("%s now assigning job %s \n queued "+workerType.toString()+" worker job count = %d%n", TAG, job.getId(), queuedUnassignedJobs.get(workerType).size());
+		System.out.printf("%s now preparingForAssigning job %s \n queued "+workerType.toString()+" worker job count = %d%n", TAG, job.getId(), queuedUnassignedJobs.get(workerType).size());
 		return job;
 	}
 

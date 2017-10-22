@@ -144,7 +144,6 @@ public final class Worker {
 		Job newJob = new Job(jobId,true);
 
 		jobs.put(jobId, newJob);
-		newJob.setStatus(JobStatus.ASSIGNED_ON_WORKER);
 
 		switch(type) {
 			// If this is a PRIVATE worker - only 1 job can be running at a time

@@ -57,6 +57,8 @@ public class JCloudsNova implements Closeable {
 
 	private static Map<Flavor, ArrayList<Long>> instanceFlavourCreationTime;
 
+	private static List<String> instances;
+
 	private static Boolean initiated = false;
 
 	// ------------------------------------------------------------------------
@@ -82,13 +84,7 @@ public class JCloudsNova implements Closeable {
 			System.exit(0);
 		}
 
-	}
-
-	public static Flavor getDefaultFlavour() {
-		return defaultFlavour;
-	}
-	public static Flavor getLargestFlavour() {
-		return largestFlavour;
+		instances = Collections.synchronizedList(new ArrayList<String>());
 	}
 
 	// ------------------------------------------------------------------------
@@ -126,6 +122,37 @@ public class JCloudsNova implements Closeable {
 			initiated = true;
 		}
     }
+
+	// ------------------------------------------------------------------------
+	// Accessors & Settors
+	// ------------------------------------------------------------------------
+
+	public static Flavor getDefaultFlavour() {
+		return defaultFlavour;
+	}
+	public static Flavor getLargestFlavour() {
+		return largestFlavour;
+	}
+
+	String getInstanceHostname() {return instanceHostname;}
+
+	Flavor getInstanceFlavour() {return instanceFlavour;}
+
+	String getInstanceState() {
+		return serverApi.get(instanceId).getStatus().value();
+	}
+
+	ServerExtendedStatus getInstanceExtendedStatus() {
+		return serverApi.get(instanceId).getExtendedStatus().get();
+	}
+
+	String getTag() {
+		if(instanceHostname != null) {
+			return String.format("%s [%s]", TAG, instanceHostname);
+		} else {
+			return TAG;
+		}
+	}
 
 	// ------------------------------------------------------------------------
 	// Initiation Methods
@@ -250,6 +277,7 @@ public class JCloudsNova implements Closeable {
 			return true;
 		} else {
 			System.out.println(getTag()+" could not create new cloud server - status = "+instanceState);
+			terminateServer();
 			return false;
 		}
 	}
@@ -262,6 +290,7 @@ public class JCloudsNova implements Closeable {
 	 *   - It is called from Worker.startWorkerSocketThread()
 	 */
 	void launchedSuccessfully() {
+		instances.add(instanceId);
     	finishCreateCalendar = Calendar.getInstance();
     	timeTakenToCreate = finishCreateCalendar.getTimeInMillis()-startCreateCalendar.getTimeInMillis();
 
@@ -280,7 +309,13 @@ public class JCloudsNova implements Closeable {
 	}
 
 	Boolean terminateServer() {
+		return terminateServer(instanceId);
+	}
+	private Boolean terminateServer(String instanceId) {
 		serverApi.delete(instanceId);
+		if (instances.contains(instanceId))
+			instances.remove(instanceId);
+
 		String serverTaskStatus = serverApi.get(instanceId).getExtendedStatus().get().getTaskState();
 
 		if (serverTaskStatus.equals("deleting")) {
@@ -292,28 +327,9 @@ public class JCloudsNova implements Closeable {
 		}
 	}
 
-	// ------------------------------------------------------------------------
-	// Accessors & Cloud Instance "Accessors"
-	// ------------------------------------------------------------------------
-
-	String getInstanceHostname() {return instanceHostname;}
-
-	Flavor getInstanceFlavour() {return instanceFlavour;}
-
-	String getInstanceState() {
-		return serverApi.get(instanceId).getStatus().value();
-	}
-
-    ServerExtendedStatus getInstanceExtendedStatus() {
-		return serverApi.get(instanceId).getExtendedStatus().get();
-	}
-
-	String getTag() {
-    	if(instanceHostname != null) {
-			return String.format("%s [%s]", TAG, instanceHostname);
-		} else {
-    		return TAG;
-		}
+	public void terminateAll() {
+		System.out.println(getTag()+" Terminating all cloud instances...");
+		instances.forEach(this::terminateServer);
 	}
 
 	// ------------------------------------------------------------------------
@@ -357,5 +373,4 @@ public class JCloudsNova implements Closeable {
 
 		return returnEstimate;
 	}
-
 }

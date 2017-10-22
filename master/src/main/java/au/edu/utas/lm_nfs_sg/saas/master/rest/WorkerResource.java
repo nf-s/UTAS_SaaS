@@ -21,7 +21,7 @@ public class WorkerResource {
 		String newStatus = ((JsonObject) new JsonParser().parse(jsonRequest)).get("status").getAsString();
 
 		if (newStatus != null) {
-			if (Master.updateWorkerStatus(workerId, newStatus)) {
+			if (Master.updateWorkerStatusFromWorkerNode(workerId, newStatus)) {
 				return Response.ok().build();
 			}
 		}

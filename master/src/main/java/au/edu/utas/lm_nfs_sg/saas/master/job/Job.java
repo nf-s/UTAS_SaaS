@@ -120,11 +120,8 @@ public class Job {
 
 	public String getJobClassString() { return jobClassString; }
 
-	public void setWorker(Worker w) {
+	void setWorker(Worker w) {
 		worker = w;
-
-		if (jobType==JobType.UNBOUNDED)
-			setEstimatedFinishDate();
 	}
 
 	public Worker getWorker() {
@@ -201,6 +198,28 @@ public class Job {
 				+getEstimatedExecutionTimeForFlavourInMs(worker.getInstanceFlavour())));
 	}
 
+	public Long getEstimatedExecutionTimeForFlavourInMs(Flavor instanceFlavour) {
+		if (!estimatedRunningTimeForFlavour.containsKey(instanceFlavour)) {
+			Long estimatedExecTime = estimateExecutionTimeInMs(instanceFlavour);
+			estimatedRunningTimeForFlavour.put(instanceFlavour, estimatedExecTime);
+
+			return estimatedExecTime;
+		} else {
+			return estimatedRunningTimeForFlavour.get(instanceFlavour);
+		}
+	}
+
+	// Should override this with sublcass method
+	public Long estimateExecutionTimeInMs(Flavor instanceFlavour) {
+		Long returnEstimate = (long) (45 * 1000);
+		//45 Seconds
+		return returnEstimate;
+	}
+
+	public Calendar getDeadline() { return deadline; }
+	private void setDeadline(Calendar d) {  deadline=d; }
+
+
 	// ------------------------------------------------------------------------
 	// Calendar/Time Utility Functions
 	// ------------------------------------------------------------------------
@@ -237,7 +256,6 @@ public class Job {
 		return cal.getTimeInMillis() - Calendar.getInstance().getTimeInMillis();
 	}
 
-
 	// ------------------------------------------------------------------------
 	// Config/Options Accessors
 	// ------------------------------------------------------------------------
@@ -267,12 +285,12 @@ public class Job {
 		return "";
 	}
 
-	public void setLaunchOptions(JsonObject launchOpt) {
+	public void setLaunchOptionsFromJson(JsonObject launchOpt) {
 		launchOptions = launchOpt;
 
 		String deadlineString = launchOptions.get("deadline").getAsString();
 		if (deadlineString != null && !deadlineString.equals("")) {
-			deadline = Calendar.getInstance();
+			Calendar deadline = Calendar.getInstance();
 
 			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.ENGLISH);
 			try {
@@ -281,12 +299,12 @@ public class Job {
 				e.printStackTrace();
 				deadline = null;
 			}
+
+			setDeadline(deadline);
 		}
 
 		estimatedRunningTimeForFlavour = new HashMap<>();
 	}
-
-	public Calendar getDeadline() { return deadline; }
 
 	// ------------------------------------------------------------------------
 	// Directories/Files Accessors and Methods
@@ -313,11 +331,6 @@ public class Job {
 		return null;
 	}
 
-	public Boolean deleteJob() {
-		deleteDirRecursively(Paths.get(jobDirectory.getAbsolutePath()));
-		return true;
-	}
-
 	private void deleteDirRecursively(Path directory) {
 		try {
 			Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {
@@ -342,22 +355,52 @@ public class Job {
 	// Job Methods
 	// ------------------------------------------------------------------------
 
-	public Long getEstimatedExecutionTimeForFlavourInMs(Flavor instanceFlavour) {
-		if (!estimatedRunningTimeForFlavour.containsKey(instanceFlavour)) {
-			Long estimatedExecTime = estimateExecutionTimeInMs(instanceFlavour);
-			estimatedRunningTimeForFlavour.put(instanceFlavour, estimatedExecTime);
-
-			return estimatedExecTime;
-		} else {
-			return estimatedRunningTimeForFlavour.get(instanceFlavour);
-		}
+	public void activateWithJson(JsonObject launchOptions) {
+		setStatus(JobStatus.INITIATING);
+		setLaunchOptionsFromJson(launchOptions);
 	}
 
-	// Should override this with sublcass method
-	public Long estimateExecutionTimeInMs(Flavor instanceFlavour) {
-		Long returnEstimate = (long) (45 * 1000);
-		//45 Seconds
-		return returnEstimate;
+	public void preparingForAssigning() {
+		setStatus(JobStatus.ASSIGNING);
+	}
+
+	public void assignToWorker(Worker w) {
+		setStatus(JobStatus.ASSIGNED_ON_MASTER);
+
+		setWorker(w);
+
+		if (jobType==JobType.UNBOUNDED)
+			setEstimatedFinishDate();
+	}
+
+	// Called from setStatus() - triggered by worker node setting status
+	private void onRunning() {
+		setStartDate();
+	}
+
+	public void stop() {
+		setStatus(JobStatus.STOPPING_ON_MASTER);
+	}
+
+	// Called from setStatus() - triggered by worker node setting status
+	private void onStopped() {
+		resetCpuTimes();
+	}
+
+	public Boolean delete() {
+		setStatus(JobStatus.DELETING_ON_MASTER);
+
+		deleteDirRecursively(Paths.get(jobDirectory.getAbsolutePath()));
+		return true;
+	}
+
+	// Called from setStatus() - triggered by worker node setting status
+	private void onFailure() {
+		getWorker().jobFinished(this);
+		setFinishDate();
+		setUsedCpuTimeInMs();
+		if (Master.DEBUG)
+			System.out.printf("%s Execution time: %dms%n", getTag(), getUsedCpuTimeInMs());
 	}
 
 	// ------------------------------------------------------------------------
@@ -374,27 +417,23 @@ public class Job {
 		}
 	}
 
-	public void setStatus(JobStatus newStatus) {
+	private void setStatus(JobStatus newStatus) {
 		setStatus(newStatus, "");
 	}
-	public void setStatus(JobStatus newStatus, String newStatusMessage) {
+	private void setStatus(JobStatus newStatus, String newStatusMessage) {
 		if (Master.DEBUG)
 			System.out.printf("%s Updated status: %s %s%n" , getTag(), newStatus.toString(), newStatusMessage);
 
 		switch (newStatus) {
 			case RUNNING:
-				setStartDate();
+				onRunning();
 				break;
 			case FINISHED:
 			case ERROR:
-				getWorker().jobFinished(this);
-				setFinishDate();
-				setUsedCpuTimeInMs();
-				if (Master.DEBUG)
-					System.out.printf("%s Execution time: %dms%n", getTag(), getUsedCpuTimeInMs());
+				onFailure();
 				break;
 			case STOPPED:
-				resetCpuTimes();
+				onStopped();
 		}
 
 		if (statusChangeListener != null)
@@ -402,6 +441,16 @@ public class Job {
 
 		status = newStatus;
 		statusMessage = newStatusMessage;
+	}
+
+	public Boolean updateStatusFromWorkerNode(String jobStatus) {
+		try {
+			setStatus(JobStatus.valueOf(jobStatus));
+			return true;
+		} catch (IllegalArgumentException e) {
+			System.out.println(TAG+" Illegal Argument Exception - Setting job status to "+jobStatus+" - jobId="+id);
+			return false;
+		}
 	}
 
 	public void setOnStatusChangeListener(StatusChangeListener listener) {

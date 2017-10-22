@@ -269,7 +269,6 @@ public class Worker implements Runnable {
 	 *  Connects to worker - asks to delete job
 	 */
 	public void deleteJob(Job job) {
-		job.setStatus(JobStatus.DELETING_ON_MASTER);
 		workerSocketClient.sendMessage("delete_job "+job.getId());
 
 		removeJobFromQueue(job);
@@ -279,7 +278,6 @@ public class Worker implements Runnable {
 	 *  Connects to worker - asks to finish job
 	 */
 	public void stopJob(Job job) {
-		job.setStatus(JobStatus.STOPPING_ON_MASTER);
 		workerSocketClient.sendMessage("stop_job "+job.getId());
 
 		removeJobFromQueue(job);
@@ -352,7 +350,7 @@ public class Worker implements Runnable {
 	public String getId() {return id;}
 	public String getHostname() {return hostname;}
 
-	public synchronized void setStatus(WorkerStatus newStatus) {
+	void setStatus(WorkerStatus newStatus) {
 		if (Master.DEBUG)
 			System.out.printf("%s Updated status: %s%n", getTag(), newStatus.toString());
 
@@ -371,6 +369,16 @@ public class Worker implements Runnable {
 	}
 	public synchronized WorkerStatus getStatus() {
 		return status;
+	}
+
+	public Boolean updateStatusFromWorkerNode(String workerStatus) {
+		try {
+			setStatus(WorkerStatus.valueOf(workerStatus));
+			return true;
+		} catch (IllegalArgumentException e) {
+			System.out.println(TAG+" Illegal Argument Exception - Setting worker status to "+workerStatus+" - workerId="+id);
+			return false;
+		}
 	}
 
 	public String getHostWithPortString() {

@@ -2,47 +2,25 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="beaef7fe-aae4-4301-be40-ae4acbe91a3f" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__junit_junit_4_12.xml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/modules/common.iml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/modules/common/common_main.iml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/modules/common/common_test.iml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/common/src/main/java/au/edu/lm_nf_sg/saas/common/worker/WorkerStatus.java" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/common/src/main/java/au/edu/lm_nf_sg/saas/common/worker/WorkerType.java" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/SaaS_REST API.docx" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/FreqCountJob.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/Job.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/JobJSONSerializer.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/SparkJob.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/worker/src/main/java/au/edu/utas/lm_nfs_sg/saas/worker/Job.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/worker/src/main/java/au/edu/utas/lm_nfs_sg/saas/worker/KFrequentCount.java" afterPath="" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/JCloudsNova.java" afterPath="$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/worker/JCloudsNova.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/Worker.java" afterPath="$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/worker/Worker.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/rest_server/ClientJobResource.java" afterPath="$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/rest/ClientJobResource.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/rest_server/JobResource.java" afterPath="$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/rest/JobResource.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/rest_server/MasterRestApi.java" afterPath="$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/rest/MasterRestApi.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/rest_server/WorkerJobResource.java" afterPath="$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/rest/WorkerJobResource.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/rest_server/WorkerResource.java" afterPath="$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/rest/WorkerResource.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/worker/src/main/java/au/edu/utas/lm_nfs_sg/saas/worker/MasterRestClient.java" afterPath="$PROJECT_DIR$/worker/src/main/java/au/edu/utas/lm_nfs_sg/saas/worker/rest/MasterRestClient.java" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.gradle/3.1/taskArtifacts/cache.properties.lock" afterPath="$PROJECT_DIR$/.gradle/3.1/taskArtifacts/cache.properties.lock" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.gradle/3.1/taskArtifacts/fileHashes.bin" afterPath="$PROJECT_DIR$/.gradle/3.1/taskArtifacts/fileHashes.bin" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.gradle/3.1/taskArtifacts/fileSnapshots.bin" afterPath="$PROJECT_DIR$/.gradle/3.1/taskArtifacts/fileSnapshots.bin" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.gradle/3.1/taskArtifacts/taskArtifacts.bin" afterPath="$PROJECT_DIR$/.gradle/3.1/taskArtifacts/taskArtifacts.bin" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/master/src/main/webapp/worker/worker-1.0-all.jar" afterPath="$PROJECT_DIR$/master/src/main/webapp/worker/worker-1.0-all.jar" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.gitignore" afterPath="$PROJECT_DIR$/.gitignore" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.gradle/3.1/taskArtifacts/cache.properties" afterPath="$PROJECT_DIR$/.gradle/3.1/taskArtifacts/cache.properties" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/compiler.xml" afterPath="$PROJECT_DIR$/.idea/compiler.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/gradle.xml" afterPath="$PROJECT_DIR$/.idea/gradle.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/modules.xml" afterPath="$PROJECT_DIR$/.idea/modules.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/modules/master/master_main.iml" afterPath="$PROJECT_DIR$/.idea/modules/master/master_main.iml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/modules/master/master_test.iml" afterPath="$PROJECT_DIR$/.idea/modules/master/master_test.iml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/modules/worker/worker_main.iml" afterPath="$PROJECT_DIR$/.idea/modules/worker/worker_main.iml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/modules/worker/worker_test.iml" afterPath="$PROJECT_DIR$/.idea/modules/worker/worker_test.iml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/README.md" afterPath="$PROJECT_DIR$/README.md" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/master/build.gradle" afterPath="$PROJECT_DIR$/master/build.gradle" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/Master.java" afterPath="$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/Master.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/job/Job.java" afterPath="$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/job/Job.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/rest/MasterRestApi.java" afterPath="$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/rest/MasterRestApi.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/rest/WorkerJobResource.java" afterPath="$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/rest/WorkerJobResource.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/rest/WorkerResource.java" afterPath="$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/rest/WorkerResource.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/worker/JCloudsNova.java" afterPath="$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/worker/JCloudsNova.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/worker/Worker.java" afterPath="$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/worker/Worker.java" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/settings.gradle" afterPath="$PROJECT_DIR$/settings.gradle" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/worker/build.gradle" afterPath="$PROJECT_DIR$/worker/build.gradle" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/worker/src/main/java/au/edu/utas/lm_nfs_sg/saas/worker/Worker.java" afterPath="$PROJECT_DIR$/worker/src/main/java/au/edu/utas/lm_nfs_sg/saas/worker/Worker.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/worker/src/main/java/au/edu/utas/lm_nfs_sg/saas/worker/job/Job.java" afterPath="$PROJECT_DIR$/worker/src/main/java/au/edu/utas/lm_nfs_sg/saas/worker/job/Job.java" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
     <ignored path="$PROJECT_DIR$/.gradle/" />
@@ -67,6 +45,9 @@
     <ignored path="$PROJECT_DIR$/common/.gradle/" />
     <ignored path="$PROJECT_DIR$/common/build/" />
     <ignored path="$PROJECT_DIR$/common/out/" />
+    <ignored path="$PROJECT_DIR$/performance_testing/.gradle/" />
+    <ignored path="$PROJECT_DIR$/performance_testing/build/" />
+    <ignored path="$PROJECT_DIR$/performance_testing/out/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -174,11 +155,55 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="600">
-      <file leaf-file-name="Master.java" pinned="false" current-in-tab="true">
+      <file leaf-file-name="Master.java" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/Master.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="575">
-              <caret line="419" column="97" lean-forward="false" selection-start-line="419" selection-start-column="97" selection-end-line="419" selection-end-column="97" />
+            <state relative-caret-position="-5456">
+              <caret line="33" column="0" lean-forward="false" selection-start-line="33" selection-start-column="0" selection-end-line="33" selection-end-column="0" />
+              <folding>
+                <element signature="imports" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="Job.java" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/job/Job.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="517">
+              <caret line="183" column="0" lean-forward="false" selection-start-line="183" selection-start-column="0" selection-end-line="183" selection-end-column="0" />
+              <folding>
+                <element signature="e#1164#1180#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="JobResource.java" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/rest/JobResource.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="-2240">
+              <caret line="145" column="44" lean-forward="false" selection-start-line="145" selection-start-column="42" selection-end-line="145" selection-end-column="44" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="JCloudsNova.java" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/worker/JCloudsNova.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="183">
+              <caret line="329" column="32" lean-forward="false" selection-start-line="329" selection-start-column="32" selection-end-line="330" selection-end-column="75" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="MasterRestApi.java" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/rest/MasterRestApi.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="158">
+              <caret line="11" column="8" lean-forward="false" selection-start-line="11" selection-start-column="8" selection-end-line="11" selection-end-column="8" />
               <folding>
                 <element signature="imports" expanded="true" />
               </folding>
@@ -189,21 +214,11 @@
       <file leaf-file-name="Worker.java" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/worker/Worker.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="279">
-              <caret line="362" column="87" lean-forward="true" selection-start-line="362" selection-start-column="87" selection-end-line="362" selection-end-column="87" />
+            <state relative-caret-position="-1081">
+              <caret line="185" column="12" lean-forward="false" selection-start-line="185" selection-start-column="12" selection-end-line="185" selection-end-column="12" />
               <folding>
                 <element signature="imports" expanded="true" />
               </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="JobStatus.java" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/common/src/main/java/au/edu/lm_nf_sg/saas/common/job/JobStatus.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="112">
-              <caret line="7" column="15" lean-forward="false" selection-start-line="7" selection-start-column="15" selection-end-line="7" selection-end-column="15" />
-              <folding />
             </state>
           </provider>
         </entry>
@@ -214,20 +229,13 @@
     <option name="RECENT_TEMPLATES">
       <list>
         <option value="HTML File" />
-        <option value="Class" />
         <option value="Enum" />
+        <option value="Class" />
       </list>
     </option>
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>estimate</find>
-      <find>zone</find>
-      <find>Melbourne</find>
-      <find>t</find>
-      <find>Termin</find>
-      <find>termina</find>
-      <find>delete</find>
       <find>TAG</find>
       <find>FAILURE</find>
       <find>activeSharedWorkers</find>
@@ -239,9 +247,7 @@
       <find>FAI</find>
       <find>act</find>
       <find>system</find>
-      <find>setstat</find>
       <find>status</find>
-      <find>setStatus</find>
       <find>STOPPING+</find>
       <find>STOP</find>
       <find>STOPPING</find>
@@ -251,6 +257,15 @@
       <find>ACTIVE</find>
       <find>df0ce05a-2691-4908-8759-5408104ac7a6</find>
       <find>getdefau</find>
+      <find>setStatus</find>
+      <find>setstat</find>
+      <find>setsta</find>
+      <find>setstatus</find>
+      <find>job.</find>
+      <find>activate</find>
+      <find>deadline</find>
+      <find>setStat</find>
+      <find>shut</find>
     </findStrings>
     <replaceStrings>
       <replace>Job</replace>
@@ -305,6 +320,10 @@
               <ExternalProjectPojo>
                 <option name="name" value=":master" />
                 <option name="path" value="$PROJECT_DIR$/master" />
+              </ExternalProjectPojo>
+              <ExternalProjectPojo>
+                <option name="name" value=":performance_testing" />
+                <option name="path" value="$PROJECT_DIR$/performance_testing" />
               </ExternalProjectPojo>
             </list>
           </value>
@@ -1401,6 +1420,57 @@
             </list>
           </value>
         </entry>
+        <entry key="$PROJECT_DIR$/performance_testing">
+          <value>
+            <list>
+              <ExternalTaskPojo>
+                <option name="description" value="Displays the components produced by project ':performance_testing'. [incubating]" />
+                <option name="linkedExternalProjectPath" value="$PROJECT_DIR$/performance_testing" />
+                <option name="name" value="components" />
+              </ExternalTaskPojo>
+              <ExternalTaskPojo>
+                <option name="description" value="Displays the sub-projects of project ':performance_testing'." />
+                <option name="linkedExternalProjectPath" value="$PROJECT_DIR$/performance_testing" />
+                <option name="name" value="projects" />
+              </ExternalTaskPojo>
+              <ExternalTaskPojo>
+                <option name="description" value="Displays all buildscript dependencies declared in project ':performance_testing'." />
+                <option name="linkedExternalProjectPath" value="$PROJECT_DIR$/performance_testing" />
+                <option name="name" value="buildEnvironment" />
+              </ExternalTaskPojo>
+              <ExternalTaskPojo>
+                <option name="description" value="Displays the insight into a specific dependency in project ':performance_testing'." />
+                <option name="linkedExternalProjectPath" value="$PROJECT_DIR$/performance_testing" />
+                <option name="name" value="dependencyInsight" />
+              </ExternalTaskPojo>
+              <ExternalTaskPojo>
+                <option name="description" value="Displays all dependencies declared in project ':performance_testing'." />
+                <option name="linkedExternalProjectPath" value="$PROJECT_DIR$/performance_testing" />
+                <option name="name" value="dependencies" />
+              </ExternalTaskPojo>
+              <ExternalTaskPojo>
+                <option name="description" value="Displays a help message." />
+                <option name="linkedExternalProjectPath" value="$PROJECT_DIR$/performance_testing" />
+                <option name="name" value="help" />
+              </ExternalTaskPojo>
+              <ExternalTaskPojo>
+                <option name="description" value="Displays the configuration model of project ':performance_testing'. [incubating]" />
+                <option name="linkedExternalProjectPath" value="$PROJECT_DIR$/performance_testing" />
+                <option name="name" value="model" />
+              </ExternalTaskPojo>
+              <ExternalTaskPojo>
+                <option name="description" value="Displays the properties of project ':performance_testing'." />
+                <option name="linkedExternalProjectPath" value="$PROJECT_DIR$/performance_testing" />
+                <option name="name" value="properties" />
+              </ExternalTaskPojo>
+              <ExternalTaskPojo>
+                <option name="description" value="Displays the tasks runnable from project ':performance_testing'." />
+                <option name="linkedExternalProjectPath" value="$PROJECT_DIR$/performance_testing" />
+                <option name="name" value="tasks" />
+              </ExternalTaskPojo>
+            </list>
+          </value>
+        </entry>
         <entry key="$PROJECT_DIR$/worker">
           <value>
             <list>
@@ -1545,12 +1615,13 @@
     </option>
     <option name="modificationStamps">
       <map>
-        <entry key="$PROJECT_DIR$" value="12051274494309" />
+        <entry key="$PROJECT_DIR$" value="12051461814847" />
         <entry key="$PROJECT_DIR$/common/build.gradle" value="3526066034" />
         <entry key="$PROJECT_DIR$/job/build.gradle" value="3208284840" />
         <entry key="$PROJECT_DIR$/master/build.gradle" value="2695544209" />
         <entry key="$PROJECT_DIR$/master_rest/build.gradle" value="1546572282" />
-        <entry key="$PROJECT_DIR$/settings.gradle" value="1821243035" />
+        <entry key="$PROJECT_DIR$/performance_testing/build.gradle" value="3526066034" />
+        <entry key="$PROJECT_DIR$/settings.gradle" value="3448428220" />
         <entry key="$PROJECT_DIR$/worker/build.gradle" value="2264720648" />
       </map>
     </option>
@@ -1600,6 +1671,13 @@
                     <value>
                       <ExternalModuleBuildClasspathPojo>
                         <option name="path" value="$PROJECT_DIR$/master_rest" />
+                      </ExternalModuleBuildClasspathPojo>
+                    </value>
+                  </entry>
+                  <entry key="$PROJECT_DIR$/performance_testing">
+                    <value>
+                      <ExternalModuleBuildClasspathPojo>
+                        <option name="path" value="$PROJECT_DIR$/performance_testing" />
                       </ExternalModuleBuildClasspathPojo>
                     </value>
                   </entry>
@@ -1778,8 +1856,6 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/job/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/FreqCountJob.java" />
-        <option value="$PROJECT_DIR$/job/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/SparkJob.java" />
         <option value="$PROJECT_DIR$/worker/src/main/java/au/edu/utas/lm_nfs_sg/saas/worker/WorkerProcessMonitorThread.java" />
         <option value="$PROJECT_DIR$/worker/src/main/java/au/edu/utas/lm_nfs_sg/saas/worker/ProcessLogMessage.java" />
         <option value="$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/rest_server/TestWebApp.java" />
@@ -1816,19 +1892,21 @@
         <option value="$PROJECT_DIR$/worker/src/main/java/au/edu/utas/lm_nfs_sg/saas/worker/job/KFrequentCount.java" />
         <option value="$PROJECT_DIR$/worker/src/main/java/au/edu/utas/lm_nfs_sg/saas/worker/worker/Worker.java" />
         <option value="$PROJECT_DIR$/worker/src/main/java/au/edu/utas/lm_nfs_sg/saas/worker/rest/MasterRestClient.java" />
-        <option value="$PROJECT_DIR$/worker/src/main/java/au/edu/utas/lm_nfs_sg/saas/worker/job/Job.java" />
         <option value="$PROJECT_DIR$/common/src/main/java/au/edu/lm_nf_sg/saas/common/worker/WorkerType.java" />
         <option value="$PROJECT_DIR$/common/src/main/java/au/edu/lm_nf_sg/saas/common/job/JobType.java" />
         <option value="$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/job/JobJSONSerializer.java" />
-        <option value="$PROJECT_DIR$/common/src/main/java/au/edu/lm_nf_sg/saas/common/job/JobStatus.java" />
-        <option value="$PROJECT_DIR$/worker/src/main/java/au/edu/utas/lm_nfs_sg/saas/worker/Worker.java" />
-        <option value="$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/worker/JCloudsNova.java" />
-        <option value="$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/worker/Worker.java" />
-        <option value="$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/job/Job.java" />
         <option value="$PROJECT_DIR$/README.md" />
         <option value="$PROJECT_DIR$/.gitignore" />
         <option value="$PROJECT_DIR$/.idea/workspace.xml" />
+        <option value="$PROJECT_DIR$/worker/src/main/java/au/edu/utas/lm_nfs_sg/saas/worker/Worker.java" />
+        <option value="$PROJECT_DIR$/worker/src/main/java/au/edu/utas/lm_nfs_sg/saas/worker/job/Job.java" />
+        <option value="$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/worker/Worker.java" />
+        <option value="$PROJECT_DIR$/common/src/main/java/au/edu/lm_nf_sg/saas/common/job/JobStatus.java" />
+        <option value="$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/job/Job.java" />
+        <option value="$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/worker/JCloudsNova.java" />
         <option value="$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/Master.java" />
+        <option value="$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/rest/MasterRestApi.java" />
+        <option value="$PROJECT_DIR$/performance_testing/src/main/java/au/edu/utas/lm_nfs_sg/performance_testing/Test.java" />
       </list>
     </option>
   </component>
@@ -1873,8 +1951,8 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="Scratches" />
       <pane id="Scope" />
-      <pane id="AndroidView" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -1885,49 +1963,34 @@
             <path>
               <item name="saas" type="b2602c69:ProjectViewProjectNode" />
               <item name="UTAS_SaaS" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
-              <item name="master" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
+              <item name="common" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
+            </path>
+            <path>
+              <item name="saas" type="b2602c69:ProjectViewProjectNode" />
+              <item name="UTAS_SaaS" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
+              <item name="comms" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
             </path>
             <path>
               <item name="saas" type="b2602c69:ProjectViewProjectNode" />
               <item name="UTAS_SaaS" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
               <item name="master" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
               <item name="saas" type="b2602c69:ProjectViewProjectNode" />
               <item name="UTAS_SaaS" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
-              <item name="master" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
-            </path>
-            <path>
-              <item name="saas" type="b2602c69:ProjectViewProjectNode" />
-              <item name="UTAS_SaaS" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
-              <item name="master" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="saas" type="b2602c69:ProjectViewProjectNode" />
-              <item name="UTAS_SaaS" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
-              <item name="master" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-              <item name="master" type="462c0819:PsiDirectoryNode" />
+              <item name="worker" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
             </path>
           </expand>
           <select />
         </subPane>
       </pane>
-      <pane id="Scratches" />
+      <pane id="AndroidView" />
       <pane id="PackagesPane" />
     </panes>
   </component>
   <component name="PropertiesComponent">
     <property name="settings.editor.selected.configurable" value="preferences.sourceCode.Java" />
-    <property name="project.structure.last.edited" value="Problems" />
+    <property name="project.structure.last.edited" value="Modules" />
     <property name="project.structure.proportion" value="0.15" />
     <property name="project.structure.side.proportion" value="0.37471265" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
@@ -1980,7 +2043,6 @@
         <option name="vmOptions" value="" />
       </ExternalSystemSettings>
       <method>
-        <option name="RunConfigurationTask" enabled="true" run_configuration_name="Build Worker Fat Jar" run_configuration_type="GradleRunConfiguration" />
         <option name="Gradle.BeforeRunTask" enabled="true" tasks="clean" externalProjectPath="$PROJECT_DIR$/master" vmOptions="" scriptParameters="" />
       </method>
     </configuration>
@@ -2058,6 +2120,7 @@
       </ExternalSystemSettings>
       <method>
         <option name="RunConfigurationTask" enabled="true" run_configuration_name="Build Worker Fat Jar" run_configuration_type="GradleRunConfiguration" />
+        <option name="Gradle.BeforeRunTask" enabled="true" tasks="clean" externalProjectPath="$PROJECT_DIR$/master" vmOptions="" scriptParameters="" />
       </method>
     </configuration>
     <configuration name="Master - Stop Inplace" type="GradleRunConfiguration" factoryName="Gradle">
@@ -2423,16 +2486,15 @@
       <window_info id="Palette&#9;" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
       <window_info id="Image Layers" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Capture Analysis" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
-      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.5777778" sideWeight="0.41345426" order="7" side_tool="true" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.24575163" sideWeight="0.14512472" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Maven Projects" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.24575163" sideWeight="0.5865457" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.24575163" sideWeight="0.85487527" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32941177" sideWeight="0.4973545" order="10" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.31895426" sideWeight="0.49634504" order="9" side_tool="false" content_ui="tabs" />
       <window_info id="Capture Tool" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Designer" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.28042328" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3281046" sideWeight="0.48526078" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Gradle" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.103552535" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.16855632" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Gradle" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.143613" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="UI Designer" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
@@ -2447,6 +2509,7 @@
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
       <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32941177" sideWeight="0.48526162" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3281046" sideWeight="0.48223734" order="1" side_tool="false" content_ui="tabs" />
     </layout>
   </component>
   <component name="UnknownFeatures">
@@ -2473,48 +2536,10 @@
     <option name="FILTER_TARGETS" value="false" />
   </component>
   <component name="editorHistoryManager">
-    <entry file="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.apache.jclouds.api/openstack-nova/2.0.2/99630c9950ae6554ba126af320dc6bfa57e19337/openstack-nova-2.0.2-sources.jar!/org/jclouds/openstack/nova/v2_0/domain/Volume.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="176">
-          <caret line="38" column="13" lean-forward="false" selection-start-line="38" selection-start-column="13" selection-end-line="38" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.apache.jclouds.api/openstack-nova/2.0.2/99630c9950ae6554ba126af320dc6bfa57e19337/openstack-nova-2.0.2-sources.jar!/org/jclouds/openstack/nova/v2_0/config/NovaHttpApiModule.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-147">
-          <caret line="49" column="13" lean-forward="false" selection-start-line="49" selection-start-column="13" selection-end-line="49" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.apache.jclouds.api/openstack-nova/2.0.2/99630c9950ae6554ba126af320dc6bfa57e19337/openstack-nova-2.0.2-sources.jar!/org/jclouds/openstack/nova/v2_0/compute/NovaComputeService.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="132">
-          <caret line="66" column="13" lean-forward="false" selection-start-line="66" selection-start-column="13" selection-end-line="66" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.google.guava/guava/16.0.1/2477d012cd5379f9696e0d9d3ccc62ad13a09ca4/guava-16.0.1-sources.jar!/com/google/common/io/Closeables.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="941">
-          <caret line="70" column="21" lean-forward="false" selection-start-line="70" selection-start-column="21" selection-end-line="70" selection-end-column="21" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="jar://C:/Program Files/Java/jdk1.8.0_131/src.zip!/java/lang/Enum.java" />
-    <entry file="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.apache.jclouds.api/openstack-nova/2.0.2/99630c9950ae6554ba126af320dc6bfa57e19337/openstack-nova-2.0.2-sources.jar!/org/jclouds/openstack/nova/v2_0/domain/Server.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="482">
-          <caret line="59" column="14" lean-forward="false" selection-start-line="59" selection-start-column="14" selection-end-line="59" selection-end-column="14" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="jar://C:/Program Files/Java/jdk1.8.0_131/src.zip!/java/io/Closeable.java" />
     <entry file="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.apache.jclouds.api/openstack-nova/2.0.2/99630c9950ae6554ba126af320dc6bfa57e19337/openstack-nova-2.0.2-sources.jar!/org/jclouds/openstack/nova/v2_0/NovaApi.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="220">
           <caret line="56" column="36" lean-forward="true" selection-start-line="56" selection-start-column="36" selection-end-line="56" selection-end-column="36" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -2539,7 +2564,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1535">
           <caret line="159" column="16" lean-forward="false" selection-start-line="159" selection-start-column="16" selection-end-line="159" selection-end-column="16" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -2551,19 +2575,11 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/common/src/main/java/au/edu/lm_nf_sg/saas/common/Worker.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="48">
-          <caret line="3" column="4" lean-forward="false" selection-start-line="3" selection-start-column="4" selection-end-line="3" selection-end-column="4" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$PROJECT_DIR$/common/src/main/java/au/edu/lm_nf_sg/saas/common/Worker.java" />
     <entry file="file://$PROJECT_DIR$/common/build.gradle">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="224">
           <caret line="14" column="0" lean-forward="false" selection-start-line="14" selection-start-column="0" selection-end-line="14" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -2571,7 +2587,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="576">
           <caret line="58" column="30" lean-forward="false" selection-start-line="58" selection-start-column="30" selection-end-line="58" selection-end-column="30" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -2579,15 +2594,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="528">
           <caret line="33" column="0" lean-forward="false" selection-start-line="33" selection-start-column="0" selection-end-line="33" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/worker/src/main/java/au/edu/utas/lm_nfs_sg/saas/worker/job/KFrequentCount.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="64">
-          <caret line="4" column="6" lean-forward="false" selection-start-line="4" selection-start-column="6" selection-end-line="4" selection-end-column="6" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -2595,25 +2601,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1360">
           <caret line="106" column="11" lean-forward="false" selection-start-line="106" selection-start-column="11" selection-end-line="106" selection-end-column="11" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/job/FreqCountJob.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="80">
-          <caret line="5" column="6" lean-forward="false" selection-start-line="5" selection-start-column="6" selection-end-line="5" selection-end-column="6" />
-          <folding>
-            <element signature="imports" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/job/JobJSONSerializer.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="336">
-          <caret line="24" column="5" lean-forward="true" selection-start-line="24" selection-start-column="5" selection-end-line="24" selection-end-column="5" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -2621,7 +2608,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="32">
           <caret line="2" column="12" lean-forward="false" selection-start-line="2" selection-start-column="12" selection-end-line="2" selection-end-column="12" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -2629,7 +2615,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="32">
           <caret line="2" column="12" lean-forward="false" selection-start-line="2" selection-start-column="12" selection-end-line="2" selection-end-column="12" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -2637,26 +2622,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="245">
           <caret line="48" column="12" lean-forward="false" selection-start-line="48" selection-start-column="12" selection-end-line="48" selection-end-column="12" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/worker/src/main/java/au/edu/utas/lm_nfs_sg/saas/worker/job/Job.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="80">
-          <caret line="21" column="24" lean-forward="true" selection-start-line="21" selection-start-column="24" selection-end-line="21" selection-end-column="24" />
-          <folding>
-            <element signature="e#9961#9962#0" expanded="true" />
-            <element signature="e#9999#10000#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/worker/src/main/java/au/edu/utas/lm_nfs_sg/saas/worker/Worker.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="224">
-          <caret line="144" column="0" lean-forward="false" selection-start-line="144" selection-start-column="0" selection-end-line="144" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -2664,7 +2629,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="80">
           <caret line="5" column="7" lean-forward="false" selection-start-line="5" selection-start-column="7" selection-end-line="5" selection-end-column="7" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -2672,10 +2636,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="245">
           <caret line="1264" column="23" lean-forward="false" selection-start-line="1264" selection-start-column="23" selection-end-line="1264" selection-end-column="23" />
-          <folding>
-            <element signature="e#49505#49506#0" expanded="false" />
-            <element signature="e#49544#49545#0" expanded="false" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -2683,38 +2643,116 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="245">
           <caret line="934" column="16" lean-forward="false" selection-start-line="934" selection-start-column="16" selection-end-line="934" selection-end-column="16" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/.idea/libraries/Gradle__org_apache_jclouds_jclouds_scriptbuilder_2_0_2.xml">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/.idea/modules/comms/comms.iml">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/.gitignore">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="453">
+          <caret line="62" column="11" lean-forward="false" selection-start-line="62" selection-start-column="11" selection-end-line="62" selection-end-column="11" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/.idea/workspace.xml">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-1184">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/master/src/main/webapp/js/mainNOTUSED.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/settings.gradle">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/README.md">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="11" lean-forward="false" selection-start-line="0" selection-start-column="11" selection-end-line="0" selection-end-column="11" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/gradlew.bat">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/gradlew">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/common/src/main/java/au/edu/lm_nf_sg/saas/common/job/JobStatus.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="32">
+          <caret line="2" column="0" lean-forward="false" selection-start-line="2" selection-start-column="0" selection-end-line="2" selection-end-column="0" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/rest/JobResource.java">
+    <entry file="jar://C:/Program Files/Java/jdk1.8.0_121/src.zip!/java/lang/ApplicationShutdownHooks.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="456">
-          <caret line="145" column="44" lean-forward="false" selection-start-line="145" selection-start-column="42" selection-end-line="145" selection-end-column="44" />
+        <state relative-caret-position="-208">
+          <caret line="36" column="6" lean-forward="false" selection-start-line="36" selection-start-column="6" selection-end-line="36" selection-end-column="6" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/rest/MasterRestApi.java">
+    <entry file="jar://C:/Program Files/Java/jdk1.8.0_121/src.zip!/java/lang/Runtime.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="256">
-          <caret line="20" column="22" lean-forward="false" selection-start-line="20" selection-start-column="22" selection-end-line="20" selection-end-column="22" />
+        <state relative-caret-position="94">
+          <caret line="210" column="25" lean-forward="true" selection-start-line="210" selection-start-column="25" selection-end-line="210" selection-end-column="25" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/rest/WorkerJobResource.java">
+    <entry file="file://$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/job/FreqCountJob.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="256">
-          <caret line="28" column="59" lean-forward="false" selection-start-line="28" selection-start-column="59" selection-end-line="28" selection-end-column="59" />
+        <state relative-caret-position="64">
+          <caret line="5" column="6" lean-forward="false" selection-start-line="5" selection-start-column="6" selection-end-line="5" selection-end-column="6" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/rest/WorkerResource.java">
+    <entry file="file://$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/job/JobJSONSerializer.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="224">
-          <caret line="23" column="23" lean-forward="false" selection-start-line="23" selection-start-column="23" selection-end-line="23" selection-end-column="23" />
+        <state relative-caret-position="336">
+          <caret line="24" column="5" lean-forward="false" selection-start-line="24" selection-start-column="5" selection-end-line="24" selection-end-column="5" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/rest/ClientJobResource.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="175">
+          <caret line="18" column="61" lean-forward="false" selection-start-line="18" selection-start-column="61" selection-end-line="18" selection-end-column="61" />
           <folding />
         </state>
       </provider>
@@ -2727,132 +2765,141 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/rest/ClientJobResource.java">
+    <entry file="file://$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/rest/WorkerResource.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="175">
-          <caret line="18" column="61" lean-forward="false" selection-start-line="18" selection-start-column="61" selection-end-line="18" selection-end-column="61" />
+        <state relative-caret-position="224">
+          <caret line="23" column="23" lean-forward="false" selection-start-line="23" selection-start-column="23" selection-end-line="23" selection-end-column="23" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/worker/src/main/java/au/edu/utas/lm_nfs_sg/saas/worker/job/Job.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="229">
+          <caret line="236" column="26" lean-forward="true" selection-start-line="236" selection-start-column="26" selection-end-line="236" selection-end-column="33" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/worker/src/main/java/au/edu/utas/lm_nfs_sg/saas/worker/job/KFrequentCount.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="64">
+          <caret line="4" column="6" lean-forward="false" selection-start-line="4" selection-start-column="6" selection-end-line="4" selection-end-column="6" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/worker/src/main/java/au/edu/utas/lm_nfs_sg/saas/worker/Worker.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1600">
+          <caret line="143" column="27" lean-forward="false" selection-start-line="143" selection-start-column="27" selection-end-line="143" selection-end-column="27" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/rest/WorkerJobResource.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="256">
+          <caret line="28" column="59" lean-forward="false" selection-start-line="28" selection-start-column="59" selection-end-line="28" selection-end-column="59" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.glassfish.jersey.core/jersey-server/2.26-b09/82c1304c56bdf11a72a3391f3f828351f8c7b0c0/jersey-server-2.26-b09-sources.jar!/org/glassfish/jersey/server/ServerProperties.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="166">
+          <caret line="91" column="76" lean-forward="false" selection-start-line="91" selection-start-column="76" selection-end-line="91" selection-end-column="76" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/javax.servlet/javax.servlet-api/3.1.0/ab3976d4574c48d22dc1abf6a9e8bd0fdf928223/javax.servlet-api-3.1.0-sources.jar!/javax/servlet/annotation/WebListener.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="53">
+          <caret line="42" column="0" lean-forward="false" selection-start-line="42" selection-start-column="0" selection-end-line="42" selection-end-column="0" />
           <folding>
-            <element signature="imports" expanded="true" />
+            <element signature="imports" expanded="false" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.glassfish.jersey.core/jersey-server/2.26-b09/82c1304c56bdf11a72a3391f3f828351f8c7b0c0/jersey-server-2.26-b09-sources.jar!/org/glassfish/jersey/server/ServerRuntime.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="166">
+          <caret line="143" column="50" lean-forward="false" selection-start-line="143" selection-start-column="50" selection-end-line="143" selection-end-column="50" />
+          <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/worker/JCloudsNova.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="277">
-          <caret line="90" column="29" lean-forward="false" selection-start-line="90" selection-start-column="29" selection-end-line="90" selection-end-column="29" />
-          <folding>
-            <element signature="e#11781#11782#0" expanded="true" />
-            <element signature="e#11836#11837#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/.idea/libraries/Gradle__org_apache_jclouds_jclouds_scriptbuilder_2_0_2.xml">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        <state relative-caret-position="183">
+          <caret line="329" column="32" lean-forward="false" selection-start-line="329" selection-start-column="32" selection-end-line="330" selection-end-column="75" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/.idea/modules/comms/comms.iml">
+    <entry file="file://$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/rest/MasterRestApi.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/.gitignore">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="453">
-          <caret line="62" column="11" lean-forward="false" selection-start-line="62" selection-start-column="11" selection-end-line="62" selection-end-column="11" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/job/Job.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="323">
-          <caret line="368" column="19" lean-forward="false" selection-start-line="368" selection-start-column="19" selection-end-line="368" selection-end-column="19" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/.idea/workspace.xml">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-1184">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/master/src/main/webapp/js/mainNOTUSED.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/settings.gradle">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/README.md">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="11" lean-forward="false" selection-start-line="0" selection-start-column="11" selection-end-line="0" selection-end-column="11" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/gradlew.bat">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/gradlew">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/worker/Worker.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="279">
-          <caret line="362" column="87" lean-forward="true" selection-start-line="362" selection-start-column="87" selection-end-line="362" selection-end-column="87" />
+        <state relative-caret-position="158">
+          <caret line="11" column="8" lean-forward="false" selection-start-line="11" selection-start-column="8" selection-end-line="11" selection-end-column="8" />
           <folding>
             <element signature="imports" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/common/src/main/java/au/edu/lm_nf_sg/saas/common/job/JobStatus.java">
+    <entry file="file://$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/worker/Worker.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="112">
-          <caret line="7" column="15" lean-forward="false" selection-start-line="7" selection-start-column="15" selection-end-line="7" selection-end-column="15" />
+        <state relative-caret-position="-1081">
+          <caret line="185" column="12" lean-forward="false" selection-start-line="185" selection-start-column="12" selection-end-line="185" selection-end-column="12" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/performance_testing/build.gradle">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="224">
+          <caret line="14" column="0" lean-forward="false" selection-start-line="14" selection-start-column="0" selection-end-line="14" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/performance_testing/src/main/java/au/edu/utas/lm_nfs_sg/performance_testing/Test.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="192">
+          <caret line="12" column="1" lean-forward="false" selection-start-line="12" selection-start-column="1" selection-end-line="12" selection-end-column="1" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/Master.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="575">
-          <caret line="419" column="97" lean-forward="false" selection-start-line="419" selection-start-column="97" selection-end-line="419" selection-end-column="97" />
+        <state relative-caret-position="-5456">
+          <caret line="33" column="0" lean-forward="false" selection-start-line="33" selection-start-column="0" selection-end-line="33" selection-end-column="0" />
           <folding>
             <element signature="imports" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/job/Job.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="517">
+          <caret line="183" column="0" lean-forward="false" selection-start-line="183" selection-start-column="0" selection-end-line="183" selection-end-column="0" />
+          <folding>
+            <element signature="e#1164#1180#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master/rest/JobResource.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-2240">
+          <caret line="145" column="44" lean-forward="false" selection-start-line="145" selection-start-column="42" selection-end-line="145" selection-end-column="44" />
+          <folding />
         </state>
       </provider>
     </entry>
@@ -2914,7 +2961,7 @@
       </state>
       <state key="ModuleStructureConfigurable.UI">
         <settings>
-          <last-edited>master_rest|master_rest</last-edited>
+          <last-edited>performance_testing</last-edited>
           <splitter-proportions>
             <option name="proportions">
               <list>
@@ -2938,7 +2985,7 @@
       </state>
       <state key="ProjectLibrariesConfigurable.UI">
         <settings>
-          <last-edited>Gradle: com.github.NanoHttpd.nanohttpd:nanohttpd:master-SNAPSHOT</last-edited>
+          <last-edited>Gradle: aopalliance:aopalliance:1.0</last-edited>
           <splitter-proportions>
             <option name="proportions">
               <list>

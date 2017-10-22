@@ -51,6 +51,8 @@ public class Job implements Runnable {
 
 		masterRestClient=new MasterRestClient(getTag());
 		logMessageList = new LinkedList<>();
+
+		setStatus(JobStatus.ASSIGNED_ON_WORKER);
 	}
 
 	//================================================================================
@@ -71,7 +73,7 @@ public class Job implements Runnable {
 		return TAG+"["+jobId+"]";
 	}
 
-	public void setStatus(JobStatus newStatus) {
+	void setStatus(JobStatus newStatus) {
 		if (status!=newStatus) {
 			addNewLogMessage("Job status updated to "+newStatus);
 			status = newStatus;
