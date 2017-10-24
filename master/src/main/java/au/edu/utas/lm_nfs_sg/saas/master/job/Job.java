@@ -154,9 +154,16 @@ public class Job {
 		return id;
 	}
 
+	public String getDescription() {
+		if (description!=null)
+			return description;
+		else
+			return "";
+	}
+
 	public String getJobClassString() { return jobClassString; }
 
-	void setWorker(Worker w) {
+	private void setWorker(Worker w) {
 		worker = w;
 	}
 
@@ -179,10 +186,21 @@ public class Job {
 		jobType = type;
 	}
 
+	public Path getDirectory(String directoryName) {
+		switch (directoryName) {
+			case "resources":
+				return getResourcesDirectory();
+			case "config":
+				return getConfigDirectory();
+			case "results":
+				return getResultsDirectory();
+		}
+		return null;
+	}
 
-	public Path getResourcesDirectory() { return resourcesDirectory; }
-	public Path getConfigDirectory() { return configDirectory;	}
-	public Path getResultsDirectory() {
+	Path getResourcesDirectory() { return resourcesDirectory; }
+	Path getConfigDirectory() { return configDirectory;	}
+	Path getResultsDirectory() {
 		return resultsDirectory;
 	}
 
@@ -252,14 +270,26 @@ public class Job {
 		}
 	}
 
+	// NOTE: Worker creation time is included as it may be better for a job to finish
+	//       after it's deadline (on the current worker) than to create a new worker
+	//       (a worker can take up to 5 minutes to create)
+	public Long getEarliestStartTimeForFlavorInMsFromNow(Flavor flavor) {
+		Long earliestStartTime = Math.max(getDeadlineInMsFromNow(), Master.MINIMUM_JOB_DEADLINE_MS_FROM_NOW)
+				- getEstimatedExecutionTimeForFlavourInMs(flavor)
+				+ JCloudsNova.estimateCreationTimeInMs(flavor);
+
+		//System.out.printf("%s Earliest start time: %d%n", getTag(), earliestStartTime);
+
+		return earliestStartTime;
+	}
+
 	// Should override this with sublcass method
-	private Long estimateExecutionTimeInMs(Flavor instanceFlavour) {
-		Long returnEstimate = (long) (45 * 1000);
-		//45 Seconds
-		return returnEstimate;
+	Long estimateExecutionTimeInMs(Flavor instanceFlavour) {
+		return (long) (45 * 1000);
 	}
 
 	public Calendar getDeadline() { return deadline; }
+	public Long getDeadlineInMsFromNow() {return getCalendarInMsFromNow(getDeadline());}
 	private void setDeadline(Calendar d) {  deadline=d; }
 
 	// ------------------------------------------------------------------------
@@ -328,6 +358,7 @@ public class Job {
 
 	public Boolean loadTemplate(String templateName) {
 		Path templateFolder = Paths.get(jobTemplatesDirectory.toString(), templateName);
+		description = templateName;
 
 		if (Files.exists(templateFolder) && Files.isDirectory(templateFolder) && Files.isReadable(templateFolder)) {
 
@@ -431,6 +462,8 @@ public class Job {
 
 	// ------------------------------------------------------------------------
 	// Job Methods
+
+	// NOTE: job status are ONLY SET in the FOLLOWING METHODS
 	// ------------------------------------------------------------------------
 	public void activateWithJson(JsonObject launchOptions) {
 		setStatus(JobStatus.INITIATING);
@@ -450,6 +483,11 @@ public class Job {
 			setEstimatedFinishDate();
 	}
 
+	public void rejectedFromWorker() {
+		setStatus(JobStatus.REJECTED_BY_WORKER);
+		setWorker(null);
+	}
+
 	// Called from setStatus() - triggered by worker node setting status
 	private void onRunning() {
 		setStartDate();
@@ -457,6 +495,8 @@ public class Job {
 
 	public void stop() {
 		setStatus(JobStatus.STOPPING_ON_MASTER);
+		if (getWorker() != null)
+			getWorker().stopJob(this);
 	}
 
 	// Called from setStatus() - triggered by worker node setting status
@@ -465,6 +505,10 @@ public class Job {
 	}
 
 	public Boolean delete() {
+		if (getWorker() != null) {
+			getWorker().deleteJob(this);
+		}
+
 		setStatus(JobStatus.DELETING_ON_MASTER);
 
 		deleteDirRecursively(baseDirectory);
@@ -472,8 +516,9 @@ public class Job {
 	}
 
 	// Called from setStatus() - triggered by worker node setting status
-	private void onFailure() {
-		getWorker().jobFinished(this);
+	private void onFinish() {
+		if (getWorker() != null)
+			getWorker().jobFinished(this);
 		setFinishDate();
 		setUsedCpuTimeInMs();
 		if (Master.DEBUG)
@@ -484,20 +529,22 @@ public class Job {
 	// WorkerStatus Interface, Accessors and Methods
 	// ------------------------------------------------------------------------
 
-	public JobStatus getStatus() {return status;}
+	public synchronized JobStatus getStatus() {return status;}
+
+	public synchronized String getStatusMessage() {return statusMessage;}
 
 	public String getStatusString() {
-		if (statusMessage != null && !statusMessage.equals("")) {
-			return String.format("%s: %s", status.toString(), statusMessage);
+		if (getStatus() != null && getStatusMessage()!=null) {
+			return String.format("%s: %s", getStatus().toString(), getStatusMessage());
 		} else {
-			return status.toString();
+			return getStatus().toString();
 		}
 	}
 
 	private void setStatus(JobStatus newStatus) {
 		setStatus(newStatus, "");
 	}
-	private void setStatus(JobStatus newStatus, String newStatusMessage) {
+	private synchronized void setStatus(JobStatus newStatus, String newStatusMessage) {
 		if (Master.DEBUG)
 			System.out.printf("%s Updated status: %s %s%n" , getTag(), newStatus.toString(), newStatusMessage);
 
@@ -507,7 +554,7 @@ public class Job {
 				break;
 			case FINISHED:
 			case ERROR:
-				onFailure();
+				onFinish();
 				break;
 			case STOPPED:
 				onStopped();
@@ -530,7 +577,7 @@ public class Job {
 		}
 	}
 
-	public void setOnStatusChangeListener(StatusChangeListener listener) {
+	public synchronized void setOnStatusChangeListener(StatusChangeListener listener) {
 		statusChangeListener = listener;
 	}
 

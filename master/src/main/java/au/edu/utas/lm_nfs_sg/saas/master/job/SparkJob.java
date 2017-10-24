@@ -8,6 +8,7 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 import org.apache.commons.io.FilenameUtils;
 
+import org.jclouds.openstack.nova.v2_0.domain.Flavor;
 import org.jdom2.Attribute;
 import org.jdom2.Document;
 import org.jdom2.Element;
@@ -110,6 +111,47 @@ public class SparkJob extends Job {
 			e.printStackTrace();
 		}
 		return returnJsonObject;
+	}
+
+
+
+	@Override
+	Long estimateExecutionTimeInMs(Flavor instanceFlavour) {
+		switch (getDescription()) {
+			case "small-test(94)":
+				switch (instanceFlavour.getName()) {
+					case "m2.small":
+						return (long)107670;
+					case "m2.medium":
+						return (long)70640;
+					case "m2.large":
+						return (long)31580;
+				}
+				break;
+			case "medium-test(Forcett)":
+				switch (instanceFlavour.getName()) {
+					case "m2.small":
+						return (long)199180;
+					case "m2.medium":
+						return (long)132280;
+					case "m2.large":
+						return (long)54710;
+				}
+				break;
+			case "large-test(Wangary)":
+				switch (instanceFlavour.getName()) {
+					case "m2.small":
+						return (long)3760000;
+					case "m2.medium":
+						return (long)2345540;
+					case "m2.large":
+						return (long)948820;
+				}
+				break;
+		}
+
+
+		return super.estimateExecutionTimeInMs(instanceFlavour);
 	}
 
 }

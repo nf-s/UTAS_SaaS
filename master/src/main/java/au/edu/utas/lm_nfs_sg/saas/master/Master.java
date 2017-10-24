@@ -23,7 +23,8 @@ public final class Master {
 
 	public static final Boolean DEBUG = true;
 	public static final String TAG = "<Master>";
-	public static final String HOSTNAME = "nfshome.duckdns.org";
+	public static final String HOSTNAME = "130.56.250.14";
+	//public static final String HOSTNAME = "nfshome.duckdns.org";
 	public static final int PORT = 8081;
 
 	public static final int MINIMUM_JOB_DEADLINE_MS_FROM_NOW = 300000; // 5 minutes
@@ -67,12 +68,12 @@ public final class Master {
 
 			initiated=true;
 
-			//Worker worker = new Worker("73ae4be2-a375-4963-a1c8-b6379cf1d0e1", "144.6.225.224", 8081, WorkerType.PRIVATE, JCloudsNova.getDefaultFlavour());
-			//workers.get(WorkerType.PRIVATE).put(worker.getId(), worker);
+			//Worker worker = new Worker("nfsspark-test-worker", "130.56.250.14", 8081, WorkerType.PRIVATE, "bd7eec8f-bccd-4d53-9371-ec8871df917c", JCloudsNova.getDefaultFlavour());
+			//workers.get(WorkerType.PRIVATE).put(worker.getWorkerId(), worker);
 
 			//new Thread(worker).start();
 
-			//Master.testVaryDeadlines();
+			Master.testVaryDeadlines();
 		}
 	}
 
@@ -84,12 +85,12 @@ public final class Master {
 		jCloudsNova.terminateAll();
 	}
 
-	public static void testVaryDeadlines() {
-		String jobTemplate = "small";
+	static void testVaryDeadlines() {
+		String jobTemplate = "small-test(94)";
 		System.out.println(TAG+" Executing test with varying deadlines");
 
 		int numJobs = 10;
-		final int deadlineModifier = 2;
+		final int deadlineModifier = 4;
 
 		new Thread(()->{
 			try {
@@ -162,42 +163,21 @@ public final class Master {
 	}
 
 	public static Path getJobDir(String jobId, String directoryName) {
-		switch (directoryName) {
-			case "resources":
-				return getJobResultsDir(jobId);
-			case "config":
-				return getJobConfigDir(jobId);
-			case "results":
-				return getJobResultsDir(jobId);
-		}
-		return null;
-	}
-
-	// Get Job Resources Directory - which contains all files required for job execution
-	public static Path getJobConfigDir(String jobId) {
 		Job job = getJob(jobId);
 		if (job!=null) {
-			return job.getConfigDirectory();
+			return job.getDirectory(directoryName);
 		}
 		return null;
 	}
 
 	// Get Job Resources Directory - which contains all files required for job execution
 	public static Path getJobResourcesDir(String jobId) {
-		Job job = getJob(jobId);
-		if (job!=null) {
-			return job.getResourcesDirectory();
-		}
-		return null;
+		return getJobDir(jobId, "resources");
 	}
 
 	// Get Job Results Directory - which contains all files uploaded from worker after execution
 	public static Path getJobResultsDir(String jobId) {
-		Job job = getJob(jobId);
-		if (job!=null) {
-			return job.getResultsDirectory();
-		}
-		return null;
+		return getJobDir(jobId, "results");
 	}
 
 	public static JsonObject processJobNewUploadedFiles(String jobId) {
@@ -300,11 +280,11 @@ public final class Master {
 	}
 
 	private static synchronized void addWorker(Worker worker) {
-		workers.get(worker.getType()).put(worker.getId(), worker);
+		workers.get(worker.getType()).put(worker.getWorkerId(), worker);
 	}
 
 	private static synchronized void removePublicWorkerFromList(Worker worker) {
-		workers.get(worker.getType()).remove(worker.getId());
+		workers.get(worker.getType()).remove(worker.getWorkerId());
 	}
 
 	//================================================================================
@@ -335,10 +315,10 @@ public final class Master {
 		job.setOnStatusChangeListener((job1, currentStatus) -> {
 			switch (currentStatus) {
 				case REJECTED_BY_WORKER:
-					assignJobToWorker(job, true, true);
+					assignJobToWorker(job1, true, false);
 					break;
-				case ASSIGNED_ON_WORKER:
-					job.setOnStatusChangeListener(null);
+				case RUNNING:
+					job1.setOnStatusChangeListener(null);
 					break;
 			}
 		});
@@ -352,7 +332,6 @@ public final class Master {
 			addJobToInactiveJobList(job);
 			if (job.getStatus() != JobStatus.FINISHED && job.getUsedCpuTimeInMs() == 0) {
 				job.stop();
-				job.getWorker().stopJob(job);
 				return true;
 			}
 		}
@@ -371,14 +350,8 @@ public final class Master {
 		}
 
 		if (job != null) {
-			Worker worker = job.getWorker();
-			if (worker != null) {
-				worker.deleteJob(job);
-			}
-			// Need to also delete from worker
 			job.delete();
 
-			job = null;
 			return true;
 		}
 
@@ -393,8 +366,8 @@ public final class Master {
 		return createNewWorker(workerType, workerFlavour, 1);
 	}
 	private static Worker createNewWorker(WorkerType workerType, Flavor workerFlavour, int attempt) {
-		System.out.println(TAG+" create new "+workerType.toString()+" worker ");
 		isCreatingNewWorker.put(workerType, true);
+		System.out.println(TAG+" create new "+workerType.toString()+" worker ");
 
 		Worker newWorker = new Worker(workerFlavour, workerType);
 		addWorker(newWorker);
@@ -408,21 +381,13 @@ public final class Master {
 					break;
 
 				// Worker creation failed
-				case FAILURE:
-					System.out.println(TAG+" failed to create "+workerType.toString()+" worker - retrying in 5 seconds");
-					if (attempt <= 2) {
-						try {
-							Thread.sleep(5000);
-						} catch (InterruptedException e) {
-							e.printStackTrace();
-						}
-						createNewWorker(workerType, workerFlavour, attempt + 1);
-					} else {
-						System.out.println(TAG+" FAILED TO CREATE WORKER 3 TIMES");
-					}
+				case CREATE_FAIL:
+					System.out.println(TAG+" failed to create "+workerType.toString()+" rejecting all jobs");
+					newWorker.rejectAllUncompletedJobs();
 					break;
+
 				// Worker created successfully - now waiting for instance...
-				case CREATED:
+				case CREATING:
 					isCreatingNewWorker.put(workerType, false);
 					continueAssigning(workerType);
 					break;
@@ -434,14 +399,13 @@ public final class Master {
 		return newWorker;
 	}
 
-	private static synchronized void assignJobToWorker(final Job job) {
+	public static synchronized void assignJobToWorker(final Job job) {
 		assignJobToWorker(job, false, false);
 	}
 
 	private static synchronized void assignJobToWorker(final Job job, Boolean placeFirstInQueue, Boolean continueAssigning) {
 		job.preparingForAssigning();
 		WorkerType workerType = job.getWorkerType();
-
 		if ((!isAssigningJob.get(workerType) && !isCreatingNewWorker.get(workerType)) || continueAssigning)
 		{
 			isAssigningJob.put(workerType, true);
@@ -452,11 +416,10 @@ public final class Master {
 					case PRIVATE:
 						// Find worker with shortest queue - and worker which will allow job to finish before deadline
 						mostFreeWorker = workers.get(workerType).values().stream()
-								// Filter workers with queue completion times GREATER THAN
-								// the job deadline - estimated job execution time
+								// Filter workers by:
+								// Estimated queue completion time IS LESS THAN Earliest job start time
 								.filter(worker -> worker.estimateQueueCompletionTimeInMs() <=
-										Math.max(Job.getCalendarInMsFromNow(job.getDeadline()), MINIMUM_JOB_DEADLINE_MS_FROM_NOW)
-												- job.getEstimatedExecutionTimeForFlavourInMs(worker.getInstanceFlavour()))
+												job.getEarliestStartTimeForFlavorInMsFromNow(worker.getInstanceFlavour()))
 								// Sort all available workers to find the worker with the smallest queue completion time
 								.sorted(Comparator.comparing(Worker::estimateQueueCompletionTimeInMs))
 								.findFirst().orElse(null);
@@ -482,7 +445,20 @@ public final class Master {
 			}
 			// If no suitable worker was found - create new worker and assign job
 			else {
-				assignJob(job, createNewWorker(workerType, JCloudsNova.getDefaultFlavour()));
+				Flavor workerFlavour = null;
+				switch (workerType) {
+					case PRIVATE:
+						workerFlavour = JCloudsNova.getFlavours().values().stream()
+								.sorted(Comparator.comparingLong(job::getEarliestStartTimeForFlavorInMsFromNow))
+								.findFirst().orElse(null);
+						break;
+				}
+
+				if (workerFlavour == null) {
+					workerFlavour = JCloudsNova.getDefaultFlavour();
+				}
+
+				assignJob(job, createNewWorker(workerType, workerFlavour));
 				isAssigningJob.put(workerType, false);
 			}
 
@@ -519,4 +495,15 @@ public final class Master {
 		return job;
 	}
 
+	// When a worker is free (has 0 active jobs) -> Reject a job from the worker with the most jobs (if it has more than 2 jobs)
+	public synchronized static void workerIsFree(WorkerType workerType) {
+		System.out.printf("%s worker is free%n", TAG);
+		try {
+			workers.get(workerType).values().stream()
+					.filter(worker -> worker.getNumJobs() > 2)
+					.sorted(Comparator.comparingInt(Worker::getNumJobs).reversed()).findFirst().ifPresent(Worker::rejectMostRecentUncompletedJob);
+		} catch (NullPointerException ignored) {
+
+		}
+	}
 }

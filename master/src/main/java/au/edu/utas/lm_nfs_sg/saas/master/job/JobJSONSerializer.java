@@ -10,9 +10,11 @@ public class JobJSONSerializer implements JsonSerializer<Job> {
 		final JsonObject jsonObject = new JsonObject();
 
 		jsonObject.addProperty("type", job.getJobClassString());
+		jsonObject.addProperty("description", job.getDescription());
 		jsonObject.addProperty("id", job.getId());
 		jsonObject.addProperty("status", job.getStatusString());
 		jsonObject.addProperty("date-created", Job.getCalendarString(job.getCreatedDate()));
+		jsonObject.addProperty("deadline", Job.getCalendarString(job.getDeadline()));
 
 		if (job.getStatus() != JobStatus.FINISHED) {
 			jsonObject.addProperty("date-completed", Job.getCalendarString(job.getEstimatedFinishDate()));

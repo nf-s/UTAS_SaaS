@@ -3,6 +3,7 @@ package au.edu.utas.lm_nfs_sg.saas.worker;
 import au.edu.lm_nf_sg.saas.common.job.JobStatus;
 import au.edu.lm_nf_sg.saas.common.worker.WorkerStatus;
 import au.edu.lm_nf_sg.saas.common.worker.WorkerType;
+import au.edu.utas.lm_nfs_sg.saas.comms.SocketCommunication;
 import au.edu.utas.lm_nfs_sg.saas.comms.SocketServer1To1;
 import au.edu.utas.lm_nfs_sg.saas.worker.rest.MasterRestClient;
 import au.edu.utas.lm_nfs_sg.saas.worker.job.Job;
@@ -64,7 +65,16 @@ public final class Worker {
 			masterRestClient = new MasterRestClient("WorkerMain");
 
 			masterSocketServer = new SocketServer1To1(TAG+" MasterSocketServer",port);
-			masterSocketServer.setOnMessageReceivedListener(message -> handleSocketMessageFromMaster(message));
+			masterSocketServer.setOnMessageReceivedListener(Worker::handleSocketMessageFromMaster);
+			masterSocketServer.setOnStatusChangeListener((socketCommunication, currentStatus) -> {
+				switch (currentStatus) {
+					// If connected to Master - resend active status
+					case CONNECTED:
+						if (status==WorkerStatus.ACTIVE)
+							setStatus(WorkerStatus.ACTIVE);
+						break;
+				}
+			});
 
 			Thread masterSocketThread = new Thread(masterSocketServer);
 			masterSocketThread.start();

@@ -10,21 +10,25 @@ import org.jclouds.openstack.nova.v2_0.domain.Flavor;
 
 import java.io.IOException;
 import java.util.Calendar;
+import java.util.Deque;
 import java.util.Queue;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.function.Consumer;
 
 public class Worker implements Runnable {
 
 	private static final String  TAG = "<Worker>";
 	private static final int SOCKET_DEFAULT_CONN_RETRY_DELAY_MS = 50;
-	private static final int SOCKET_DEFAULT_CONN_RETRY_ATTEMPTS = 10;
+	private static final int SOCKET_DEFAULT_CONN_RETRY_ATTEMPTS = 10; // 500ms max (10 attempts * 50ms apart)
 	private static final int SOCKET_CREATEWORKER_CONN_RETRY_DELAY_MS = 500;
+	private static final int SOCKET_CREATEWORKER_CONN_RETRY_ATTEMPTS = 100; // 5 minutes max (100 attempts * 500ms apart)
 
 	private JCloudsNova jCloudsNova;
 	private Flavor instanceFlavour;
 
-	private String id;
+	private String workerId;
 	private String hostname;
 	private int workerPort;
 
@@ -32,8 +36,8 @@ public class Worker implements Runnable {
 	private SocketClient workerSocketClient;
 
 	private WorkerType type = WorkerType.PUBLIC;
-	private Queue<Job> jobQueue;
-	private Queue<Job> unassignedJobQueue;
+	private Deque<Job> jobQueue;
+	private Deque<Job> unassignedJobQueue;
 
 	private Boolean available = true;
 
@@ -49,45 +53,44 @@ public class Worker implements Runnable {
 	// ------------------------------------------------------------------------
 
 	// Create new worker/cloud instance
-	public Worker(Flavor instanceFlavour, WorkerType workerType) {
+	public Worker(Flavor instanceFlav, WorkerType workerType) {
 		hostname = "unknown.hostname";
 		workerPort = 0;
 
-		this.instanceFlavour = instanceFlavour;
+		this.instanceFlavour = instanceFlav;
 
 		type = workerType;
 
-		// Set initial status - this determines that a worker needs to be created
-		status = WorkerStatus.CREATING;
+		status = WorkerStatus.NOT_CREATED;
 
-		id = UUID.randomUUID().toString();
+		workerId = UUID.randomUUID().toString();
 
-		jCloudsNova = new JCloudsNova();
+		jCloudsNova = new JCloudsNova(instanceFlavour, workerId, type);
 
 		init();
 	}
 
 	// Already existing worker - NEED TO UPDATE
-	public Worker(String id, String h, int p, WorkerType workerType, Flavor instanceFlavour) {
+	public Worker(String id, String h, int p, WorkerType workerType, String instanceId, Flavor instanceFlav) {
 		hostname = h;
 		workerPort = p;
-		this.instanceFlavour = instanceFlavour;
+		instanceFlavour = instanceFlav;
 
 		type = workerType;
 
 		// Set initial status
-		status = WorkerStatus.INITIATING;
+		status = WorkerStatus.INACTIVE;
 
-		this.id =id;
+		workerId =id;
 
-		jCloudsNova = new JCloudsNova(id, instanceFlavour);
+		jCloudsNova = new JCloudsNova(instanceId, instanceFlavour, workerId, type);
 
 		init();
 	}
 
 	private void init() {
-		jobQueue = new ConcurrentLinkedQueue<Job>();
-		unassignedJobQueue = new ConcurrentLinkedQueue<Job>();
+		jobQueue = new ConcurrentLinkedDeque<>();
+		unassignedJobQueue = new ConcurrentLinkedDeque<>();
 	}
 
 	// ------------------------------------------------------------------------
@@ -96,7 +99,8 @@ public class Worker implements Runnable {
 
 	public void run() {
 		running = true;
-		if (getStatus() == WorkerStatus.CREATING) {
+		if (getStatus() == WorkerStatus.NOT_CREATED) {
+
 			createNewWorker();
 
 			if (getStatus() == WorkerStatus.CREATED) {
@@ -114,7 +118,6 @@ public class Worker implements Runnable {
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-			setStatus(WorkerStatus.INACTIVE);
 		}
 
 		if (jCloudsNova != null) {
@@ -144,7 +147,7 @@ public class Worker implements Runnable {
 			if (!isRunning())
 				new Thread(this).start();
 
-			while (!isConnected()) {
+			/*while (!isConnected()) {
 				try {
 					// If connecting timeout occurred within the last 10 minutes - break from loop
 					if (isLastConnectionTimeoutRecent())
@@ -156,7 +159,7 @@ public class Worker implements Runnable {
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
-			}
+			}*/
 		}
 
 		return isConnected();
@@ -173,10 +176,11 @@ public class Worker implements Runnable {
 	 *  	  it will update its status through REST API (through WorkerResource.class)
 	 */
 	private void createNewWorker() {
+		setStatus(WorkerStatus.CREATING);
 		if (Master.DEBUG)
 			System.out.println(TAG+ " creating new worker");
 
-		if (jCloudsNova.createWorker(id, type)) {
+		if (jCloudsNova.createWorker()) {
 			// Successfully launched instance - set hostname
 
 			hostname = jCloudsNova.getInstanceHostname();
@@ -204,7 +208,7 @@ public class Worker implements Runnable {
 
 			if (getStatus()==WorkerStatus.CREATED) {
 				workerSocketClient.setConnectionRetryDelayMs(SOCKET_CREATEWORKER_CONN_RETRY_DELAY_MS);
-				workerSocketClient.setConnectionRetries(0); // 0 - indicates unlimited retries
+				workerSocketClient.setConnectionRetries(SOCKET_CREATEWORKER_CONN_RETRY_ATTEMPTS); // 0 - indicates unlimited retries
 			} else {
 				workerSocketClient.setConnectionRetryDelayMs(SOCKET_DEFAULT_CONN_RETRY_DELAY_MS);
 				workerSocketClient.setConnectionRetries(SOCKET_DEFAULT_CONN_RETRY_ATTEMPTS);
@@ -217,7 +221,7 @@ public class Worker implements Runnable {
 					case CONNECTED:
 						// If connected to a newly created worker - reset connection retry parameters to default
 						if (getStatus()==WorkerStatus.CREATED) {
-							jCloudsNova.launchedSuccessfully();
+							jCloudsNova.launchSuccessful();
 
 							workerSocketClient.setConnectionRetryDelayMs(SOCKET_DEFAULT_CONN_RETRY_DELAY_MS);
 							workerSocketClient.setConnectionRetries(SOCKET_DEFAULT_CONN_RETRY_ATTEMPTS);
@@ -227,8 +231,14 @@ public class Worker implements Runnable {
 						setStatus(WorkerStatus.INACTIVE);
 						break;
 					case TIMEOUT:
-						resetLastConnectionTimeoutTime();
-						setStatus(WorkerStatus.UNREACHABLE);
+						if (getStatus()==WorkerStatus.CREATED) {
+							setStatus(WorkerStatus.CREATE_FAIL);
+							jCloudsNova.launchFailed();
+							stopRunning();
+						} else {
+							resetLastConnectionTimeoutTime();
+							setStatus(WorkerStatus.UNREACHABLE);
+						}
 						break;
 				}
 			});
@@ -292,12 +302,15 @@ public class Worker implements Runnable {
 	 */
 	public void jobFinished(Job job) {
 		removeJobFromQueue(job);
+		if (getNumJobs() <= 1) {
+			Master.workerIsFree(type);
+		}
 	}
+
 
 	// ------------------------------------------------------------------------
 	// JOB QUEUE METHODS
 	// ------------------------------------------------------------------------
-
 	private synchronized void addJobToQueue(Job job) {
 		jobQueue.add(job);
 	}
@@ -305,6 +318,22 @@ public class Worker implements Runnable {
 	private synchronized void removeJobFromQueue(Job job) {
 		if (jobQueue.contains(job))
 			jobQueue.remove(job);
+	}
+
+	public synchronized void rejectMostRecentUncompletedJob() {
+		if (getNumJobs() > 1) {
+			Job rejectJob = jobQueue.peekLast();
+			if (rejectJob.getStatus() != JobStatus.RUNNING) {
+				System.out.printf("%s rejecting job: %s%n", getTag(), rejectJob.getId());
+				stopJob(rejectJob);
+				rejectJob.rejectedFromWorker();
+			}
+		}
+	}
+
+	public synchronized void rejectAllUncompletedJobs() {
+		jobQueue.forEach(Job::rejectedFromWorker);
+		jobQueue.clear();
 	}
 
 	public synchronized Calendar estimateQueueCompletionCalendar() {
@@ -351,7 +380,7 @@ public class Worker implements Runnable {
 	// ------------------------------------------------------------------------
 	// GETTERS/SETTERS & OTHER SIMPLE PROPERTY METHODS
 	// ------------------------------------------------------------------------
-	public String getId() {return id;}
+	public String getWorkerId() {return workerId;}
 	public String getHostname() {return hostname;}
 
 	void setStatus(WorkerStatus newStatus) {
@@ -380,7 +409,7 @@ public class Worker implements Runnable {
 			setStatus(WorkerStatus.valueOf(workerStatus));
 			return true;
 		} catch (IllegalArgumentException e) {
-			System.out.println(TAG+" Illegal Argument Exception - Setting worker status to "+workerStatus+" - workerId="+id);
+			System.out.println(TAG+" Illegal Argument Exception - Setting worker status to "+workerStatus+" - workerId="+ workerId);
 			return false;
 		}
 	}

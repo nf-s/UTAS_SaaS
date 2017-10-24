@@ -2,7 +2,8 @@
 // CONSTANTS
 // -----------------------------------------------------------
 API_KEY = "hello";
-const MASTER_API_ROOTURL = "http://localhost:8081/api/client/";
+const MASTER_API_ROOTURL = "http://130.56.250.14:8081/api/client/";
+//const MASTER_API_ROOTURL = "http://localhost:8081/api/client/";
 
 // -----------------------------------------------------------
 // VUE SETUP
@@ -22,7 +23,7 @@ app = new Vue({
         selectedJobId: null,
 
         activeApiUrl: MASTER_API_ROOTURL+"job/active",
-        activeFields: ['type', 'id', 'description', 'status','date-completed','running-time','__slot:actions'],
+        activeFields: ['type', 'id', 'description', 'status','date-created','deadline','date-completed','running-time','__slot:actions'],
 
         inactiveApiUrl: MASTER_API_ROOTURL+"job/inactive",
         inactiveFields: ['type', 'id','description','status','date-created','__slot:actions'],
