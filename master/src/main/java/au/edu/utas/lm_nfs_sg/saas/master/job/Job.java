@@ -101,6 +101,7 @@ public class Job {
 	private JobStatus status = JobStatus.INACTIVE;
 	private String statusMessage;
 	private StatusChangeListener statusChangeListener;
+	private final Boolean statusSynchronise = true;
 
 	// ------------------------------------------------------------------------
 	// Constructor
@@ -529,14 +530,20 @@ public class Job {
 	// WorkerStatus Interface, Accessors and Methods
 	// ------------------------------------------------------------------------
 
-	public synchronized JobStatus getStatus() {return status;}
+	public JobStatus getStatus() {
+		synchronized (statusSynchronise) {
+			return status;
+		}
+	}
 
-	public synchronized String getStatusMessage() {return statusMessage;}
+	public String getStatusMessage() {
+		synchronized (statusSynchronise) {
+			return statusMessage;
+		}
+	}
 
 	public String getStatusString() {
-		if (getStatus() != null && getStatusMessage()!=null) {
-			return String.format("%s: %s", getStatus().toString(), getStatusMessage());
-		} else {
+		synchronized (statusSynchronise) {
 			return getStatus().toString();
 		}
 	}
@@ -544,27 +551,34 @@ public class Job {
 	private void setStatus(JobStatus newStatus) {
 		setStatus(newStatus, "");
 	}
-	private synchronized void setStatus(JobStatus newStatus, String newStatusMessage) {
-		if (Master.DEBUG)
-			System.out.printf("%s Updated status: %s %s%n" , getTag(), newStatus.toString(), newStatusMessage);
+	private void setStatus(JobStatus newStatus, String newStatusMessage) {
+		synchronized (statusSynchronise) {
+			if (Master.DEBUG)
+				System.out.printf("%s Updated status: %s %s%n", getTag(), newStatus.toString(), newStatusMessage);
 
-		switch (newStatus) {
-			case RUNNING:
-				onRunning();
-				break;
-			case FINISHED:
-			case ERROR:
-				onFinish();
-				break;
-			case STOPPED:
-				onStopped();
+			switch (newStatus) {
+				case RUNNING:
+					onRunning();
+					break;
+				case FINISHED:
+				case ERROR:
+					onFinish();
+					break;
+				case STOPPED:
+					onStopped();
+			}
+
+			if (statusChangeListener != null)
+				try {
+					statusChangeListener.onStatusChanged(this, newStatus);
+				} catch (RuntimeException e) {
+					e.printStackTrace();
+				}
+
+
+			status = newStatus;
+			statusMessage = newStatusMessage;
 		}
-
-		if (statusChangeListener != null)
-			statusChangeListener.onStatusChanged(this, newStatus);
-
-		status = newStatus;
-		statusMessage = newStatusMessage;
 	}
 
 	public Boolean updateStatusFromWorkerNode(String jobStatus) {
@@ -577,8 +591,10 @@ public class Job {
 		}
 	}
 
-	public synchronized void setOnStatusChangeListener(StatusChangeListener listener) {
-		statusChangeListener = listener;
+	public void setOnStatusChangeListener(StatusChangeListener listener) {
+		synchronized (statusSynchronise) {
+			statusChangeListener = listener;
+		}
 	}
 
 	public interface StatusChangeListener {

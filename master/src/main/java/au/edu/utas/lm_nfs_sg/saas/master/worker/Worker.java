@@ -48,6 +48,9 @@ public class Worker implements Runnable {
 
 	private volatile Boolean running=false;
 
+	private final Boolean jobQueueSynchronise = true;
+	private final Boolean statusSynchronise = true;
+
 	// ------------------------------------------------------------------------
 	// Constructors
 	// ------------------------------------------------------------------------
@@ -311,70 +314,84 @@ public class Worker implements Runnable {
 	// ------------------------------------------------------------------------
 	// JOB QUEUE METHODS
 	// ------------------------------------------------------------------------
-	private synchronized void addJobToQueue(Job job) {
-		jobQueue.add(job);
+	private void addJobToQueue(Job job) {
+		synchronized (jobQueueSynchronise) {
+			jobQueue.add(job);
+		}
 	}
 
-	private synchronized void removeJobFromQueue(Job job) {
-		if (jobQueue.contains(job))
-			jobQueue.remove(job);
+	private void removeJobFromQueue(Job job) {
+		synchronized (jobQueueSynchronise) {
+			if (jobQueue.contains(job))
+				jobQueue.remove(job);
+		}
 	}
 
-	public synchronized void rejectMostRecentUncompletedJob() {
-		if (getNumJobs() > 1) {
-			Job rejectJob = jobQueue.peekLast();
-			if (rejectJob.getStatus() != JobStatus.RUNNING) {
-				System.out.printf("%s rejecting job: %s%n", getTag(), rejectJob.getId());
-				stopJob(rejectJob);
-				rejectJob.rejectedFromWorker();
+	public void rejectMostRecentUncompletedJob() {
+		synchronized (jobQueueSynchronise) {
+			if (getNumJobs() > 1) {
+				Job rejectJob = jobQueue.peekLast();
+				if (rejectJob.getStatus() != JobStatus.RUNNING) {
+					System.out.printf("%s rejecting job: %s%n", getTag(), rejectJob.getId());
+					stopJob(rejectJob);
+					rejectJob.rejectedFromWorker();
+				}
 			}
 		}
 	}
 
-	public synchronized void rejectAllUncompletedJobs() {
-		jobQueue.forEach(Job::rejectedFromWorker);
-		jobQueue.clear();
+	public void rejectAllUncompletedJobs() {
+		synchronized (jobQueueSynchronise) {
+			jobQueue.forEach(Job::rejectedFromWorker);
+			jobQueue.clear();
+		}
 	}
 
-	public synchronized Calendar estimateQueueCompletionCalendar() {
+	public Calendar estimateQueueCompletionCalendar() {
 		Calendar returnCal = Calendar.getInstance();
 		returnCal.add(Calendar.MILLISECOND, estimateQueueCompletionTimeInMs().intValue());
 
 		return returnCal;
 	}
 
-	public synchronized Long estimateQueueCompletionTimeInMs() {
-		Long time = 0L;
+	public Long estimateQueueCompletionTimeInMs() {
+		synchronized (jobQueueSynchronise) {
+			Long time = 0L;
 
-		// If worker is creating - or created and waiting for worker to come online
-		// Add worker creation time (remaining) to queue completion time
-		if (status==WorkerStatus.CREATING || status==WorkerStatus.CREATED) {
-			time += Math.max(jCloudsNova.getEstimatedCreationTimeInMs()-jCloudsNova.getElapsedCreationTimeInMs(), 0);
-		}
-
-		// Add all job estimated execution time for jobs in queue
-		for (Job job : jobQueue) {
-			time += job.getEstimatedExecutionTimeForFlavourInMs(jCloudsNova.getInstanceFlavour());
-			if (job.getStatus() == JobStatus.RUNNING) {
-				time -= job.getUsedCpuTimeInMs();
+			// If worker is creating - or created and waiting for worker to come online
+			// Add worker creation time (remaining) to queue completion time
+			if (status == WorkerStatus.CREATING || status == WorkerStatus.CREATED) {
+				time += Math.max(jCloudsNova.getEstimatedCreationTimeInMs() - jCloudsNova.getElapsedCreationTimeInMs(), 0);
 			}
+
+			// Add all job estimated execution time for jobs in queue
+			for (Job job : jobQueue) {
+				time += job.getEstimatedExecutionTimeForFlavourInMs(jCloudsNova.getInstanceFlavour());
+				if (job.getStatus() == JobStatus.RUNNING) {
+					time -= job.getUsedCpuTimeInMs();
+				}
+			}
+
+			if (Master.DEBUG)
+				System.out.println(getTag() + " Estimated time for queue completion is " + time.toString() + " ms");
+
+			return time;
 		}
-
-		if (Master.DEBUG)
-			System.out.println(getTag()+" Estimated time for queue completion is "+time.toString()+" ms");
-
-		return time;
 	}
 
-	public synchronized Boolean isAvailable() {
-		if (jobQueue.size() > 10) {
-			available=false;
+	public Boolean isAvailable() {
+		synchronized (jobQueueSynchronise) {
+			if (jobQueue.size() > 10) {
+				available = false;
+			}
+			return available;
 		}
-		return available;
 	}
 
-	public synchronized int getNumJobs() {
-		return jobQueue.size();
+	public int getNumJobs() {
+		synchronized (jobQueueSynchronise) {
+			return jobQueue.size();
+		}
 	}
 
 	// ------------------------------------------------------------------------
@@ -384,24 +401,33 @@ public class Worker implements Runnable {
 	public String getHostname() {return hostname;}
 
 	void setStatus(WorkerStatus newStatus) {
-		if (Master.DEBUG)
-			System.out.printf("%s Updated status: %s%n", getTag(), newStatus.toString());
+		synchronized (statusSynchronise) {
+			if (Master.DEBUG)
+				System.out.printf("%s Updated status: %s%n", getTag(), newStatus.toString());
 
-		switch (newStatus) {
-			case ACTIVE:
-				// If any jobs are assigned on master server - BUT haven't been sent to Worker (on worker server)
-				// Send assign command for each job
-				jobQueue.stream().filter(job -> job.getStatus()==JobStatus.ASSIGNED_ON_MASTER).forEach(this::sendAssignJobCommand);
-				break;
+			switch (newStatus) {
+				case ACTIVE:
+					// If any jobs are assigned on master server - BUT haven't been sent to Worker (on worker server)
+					// Send assign command for each job
+					jobQueue.stream().filter(job -> job.getStatus() == JobStatus.ASSIGNED_ON_MASTER).forEach(this::sendAssignJobCommand);
+					break;
+			}
+
+			if (statusChangeListener != null) {
+				try {
+					statusChangeListener.onJobStatusChanged(this, newStatus);
+				} catch (RuntimeException e) {
+					e.printStackTrace();
+				}
+			}
+
+			status = newStatus;
 		}
-
-		if (statusChangeListener != null)
-			statusChangeListener.onJobStatusChanged(this, newStatus);
-
-		status = newStatus;
 	}
-	public synchronized WorkerStatus getStatus() {
-		return status;
+	public WorkerStatus getStatus() {
+		synchronized (statusSynchronise) {
+			return status;
+		}
 	}
 
 	public Boolean updateStatusFromWorkerNode(String workerStatus) {
@@ -420,7 +446,7 @@ public class Worker implements Runnable {
 
 	public WorkerType getType() {return type;}
 
-	public Boolean isConnected() {return status ==WorkerStatus.ACTIVE;}
+	public Boolean isConnected() {return getStatus() ==WorkerStatus.ACTIVE;}
 
 	public Boolean isRunning() {return running;}
 
@@ -449,7 +475,9 @@ public class Worker implements Runnable {
 	// ------------------------------------------------------------------------
 
 	public void setOnStatusChangeListener(StatusChangeListener listener) {
-		statusChangeListener = listener;
+		synchronized (statusSynchronise) {
+			statusChangeListener = listener;
+		}
 	}
 
 	public interface StatusChangeListener {

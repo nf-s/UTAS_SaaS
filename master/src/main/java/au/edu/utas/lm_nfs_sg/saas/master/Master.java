@@ -23,7 +23,7 @@ public final class Master {
 
 	public static final Boolean DEBUG = true;
 	public static final String TAG = "<Master>";
-	public static final String HOSTNAME = "130.56.250.14";
+	public static final String HOSTNAME = "144.6.225.200";
 	//public static final String HOSTNAME = "nfshome.duckdns.org";
 	public static final int PORT = 8081;
 
@@ -43,6 +43,9 @@ public final class Master {
 
 	private static JCloudsNova jCloudsNova;
 	private static Boolean initiated = false;
+
+	private static final Boolean assignSynchronise = true;
+	private static final Boolean jobAssignQueueSynchronise = true;
 
 	static {
 		inactiveJobs = Collections.synchronizedMap(new HashMap<String, Job>());
@@ -73,7 +76,7 @@ public final class Master {
 
 			//new Thread(worker).start();
 
-			Master.testVaryDeadlines();
+			//Master.testVaryDeadlines();
 		}
 	}
 
@@ -366,7 +369,9 @@ public final class Master {
 		return createNewWorker(workerType, workerFlavour, 1);
 	}
 	private static Worker createNewWorker(WorkerType workerType, Flavor workerFlavour, int attempt) {
-		isCreatingNewWorker.put(workerType, true);
+		synchronized (assignSynchronise) {
+			isCreatingNewWorker.put(workerType, true);
+		}
 		System.out.println(TAG+" create new "+workerType.toString()+" worker ");
 
 		Worker newWorker = new Worker(workerFlavour, workerType);
@@ -388,7 +393,9 @@ public final class Master {
 
 				// Worker created successfully - now waiting for instance...
 				case CREATING:
-					isCreatingNewWorker.put(workerType, false);
+					synchronized (assignSynchronise) {
+						isCreatingNewWorker.put(workerType, false);
+					}
 					continueAssigning(workerType);
 					break;
 			}
@@ -399,16 +406,24 @@ public final class Master {
 		return newWorker;
 	}
 
-	public static synchronized void assignJobToWorker(final Job job) {
+	public static void assignJobToWorker(final Job job) {
 		assignJobToWorker(job, false, false);
 	}
 
-	private static synchronized void assignJobToWorker(final Job job, Boolean placeFirstInQueue, Boolean continueAssigning) {
+	private static void assignJobToWorker(final Job job, Boolean placeFirstInQueue, Boolean continueAssigning) {
 		job.preparingForAssigning();
 		WorkerType workerType = job.getWorkerType();
-		if ((!isAssigningJob.get(workerType) && !isCreatingNewWorker.get(workerType)) || continueAssigning)
+
+		Boolean canAssignJob;
+		synchronized (assignSynchronise) {
+			canAssignJob = (!isAssigningJob.get(workerType) && !isCreatingNewWorker.get(workerType)) || continueAssigning;
+		}
+
+		if (canAssignJob)
 		{
-			isAssigningJob.put(workerType, true);
+			synchronized (assignSynchronise) {
+				isAssigningJob.put(workerType, true);
+			}
 			Worker mostFreeWorker = null;
 
 			if (workers.get(workerType).size() > 0) {
@@ -440,7 +455,9 @@ public final class Master {
 				if (queuedUnassignedJobs.get(workerType).size() != 0) {
 					assignJobToWorker(popJobFromAssignQueue(workerType), false, true);
 				} else {
-					isAssigningJob.put(workerType, false);
+					synchronized (assignSynchronise) {
+						isAssigningJob.put(workerType, false);
+					}
 				}
 			}
 			// If no suitable worker was found - create new worker and assign job
@@ -459,7 +476,9 @@ public final class Master {
 				}
 
 				assignJob(job, createNewWorker(workerType, workerFlavour));
-				isAssigningJob.put(workerType, false);
+				synchronized (assignSynchronise) {
+					isAssigningJob.put(workerType, false);
+				}
 			}
 
 		}
@@ -470,40 +489,52 @@ public final class Master {
 		}
 	}
 
-	private synchronized static void continueAssigning(WorkerType workerType) {
-		if (queuedUnassignedJobs.get(workerType).size() != 0)
-			assignJobToWorker(popJobFromAssignQueue(workerType), false, true);
-	}
-
-	private synchronized static void addJobToAssignQueue(Job job) {
-		addJobToAssignQueue(job, false);
-	}
-	private synchronized static void addJobToAssignQueue(Job job, Boolean placeFirstInQueue) {
-		WorkerType workerType = job.getWorkerType();
-		if (placeFirstInQueue) {
-			queuedUnassignedJobs.get(workerType).addFirst(job);
-		} else {
-			queuedUnassignedJobs.get(workerType).addLast(job);
+	private static void continueAssigning(WorkerType workerType) {
+		Job jobToAssign = null;
+		synchronized (jobAssignQueueSynchronise) {
+			if (queuedUnassignedJobs.get(workerType).size() != 0)
+				jobToAssign = popJobFromAssignQueue(workerType);
 		}
 
-		System.out.printf("%s job %s added to inactive job list \n queued "+workerType.toString()+" worker job count = %d%n", TAG, job.getId(), queuedUnassignedJobs.get(workerType).size());
+		if (jobToAssign != null)
+			assignJobToWorker(jobToAssign, false, true);
 	}
 
-	private synchronized static Job popJobFromAssignQueue(WorkerType workerType) {
-		Job job = queuedUnassignedJobs.get(workerType).removeFirst();
-		System.out.printf("%s now assigning job %s \n queued "+workerType.toString()+" worker job count = %d%n", TAG, job.getId(), queuedUnassignedJobs.get(workerType).size());
-		return job;
+	private static void addJobToAssignQueue(Job job) {
+		addJobToAssignQueue(job, false);
+	}
+	private static void addJobToAssignQueue(Job job, Boolean placeFirstInQueue) {
+		synchronized (jobAssignQueueSynchronise) {
+			WorkerType workerType = job.getWorkerType();
+			if (placeFirstInQueue) {
+				queuedUnassignedJobs.get(workerType).addFirst(job);
+			} else {
+				queuedUnassignedJobs.get(workerType).addLast(job);
+			}
+
+			System.out.printf("%s job %s added to inactive job list \n queued " + workerType.toString() + " worker job count = %d%n", TAG, job.getId(), queuedUnassignedJobs.get(workerType).size());
+		}
+	}
+
+	private static Job popJobFromAssignQueue(WorkerType workerType) {
+		synchronized (jobAssignQueueSynchronise) {
+			Job job = queuedUnassignedJobs.get(workerType).removeFirst();
+			System.out.printf("%s now assigning job %s \n queued " + workerType.toString() + " worker job count = %d%n", TAG, job.getId(), queuedUnassignedJobs.get(workerType).size());
+			return job;
+		}
 	}
 
 	// When a worker is free (has 0 active jobs) -> Reject a job from the worker with the most jobs (if it has more than 2 jobs)
-	public synchronized static void workerIsFree(WorkerType workerType) {
-		System.out.printf("%s worker is free%n", TAG);
-		try {
-			workers.get(workerType).values().stream()
-					.filter(worker -> worker.getNumJobs() > 2)
-					.sorted(Comparator.comparingInt(Worker::getNumJobs).reversed()).findFirst().ifPresent(Worker::rejectMostRecentUncompletedJob);
-		} catch (NullPointerException ignored) {
+	public static void workerIsFree(WorkerType workerType) {
+		synchronized (jobAssignQueueSynchronise) {
+			System.out.printf("%s worker is free%n", TAG);
+			try {
+				workers.get(workerType).values().stream()
+						.filter(worker -> worker.getNumJobs() > 2)
+						.sorted(Comparator.comparingInt(Worker::getNumJobs).reversed()).findFirst().ifPresent(Worker::rejectMostRecentUncompletedJob);
+			} catch (NullPointerException ignored) {
 
+			}
 		}
 	}
 }
