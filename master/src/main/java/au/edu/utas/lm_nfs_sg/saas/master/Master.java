@@ -417,13 +417,12 @@ public final class Master {
 		Boolean canAssignJob;
 		synchronized (assignSynchronise) {
 			canAssignJob = (!isAssigningJob.get(workerType) && !isCreatingNewWorker.get(workerType)) || continueAssigning;
+			if (canAssignJob)
+				isAssigningJob.put(workerType, true);
 		}
 
 		if (canAssignJob)
 		{
-			synchronized (assignSynchronise) {
-				isAssigningJob.put(workerType, true);
-			}
 			Worker mostFreeWorker = null;
 
 			if (workers.get(workerType).size() > 0) {
