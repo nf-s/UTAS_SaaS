@@ -26,6 +26,9 @@ public final class Worker {
 	private static String masterHostname;
 
 	private static Map<String, Job> jobs;
+
+	// Job queue (only for PRIVATE workers)
+	// The first job is the currently running job
 	private static Queue<Job> jobQueue;
 
 	/**
@@ -33,7 +36,7 @@ public final class Worker {
 	 *  1 - Worker id (string)
 	 *  2 - Master hostname (string)
 	 *  3 - Master socket port (integer between 1024 and 65535)
-	 *  4 - Worker Type (Type enum - as string)
+	 *  4 - Worker Type (WorkerType enum - as string)
 	 *
 	 */
 	public static void main(String[] args) {
@@ -68,7 +71,7 @@ public final class Worker {
 
 			jobs = synchronizedMap(new HashMap<String, Job>());
 			if(type==WorkerType.PRIVATE) {
-				jobQueue = new ConcurrentLinkedQueue<Job>();
+				jobQueue = new ConcurrentLinkedQueue<>();
 			}
 
 			setStatus(WorkerStatus.ACTIVE);
@@ -106,17 +109,14 @@ public final class Worker {
 
 		switch (inputSplit) {
 			case "new_job":
-				//runProcessFromString(mess);
 				launchNewJob(mess.split(" ")[1]);
 				break;
 
 			case "stop_job":
-				//runProcessFromString(mess);
 				stopJob(mess.split(" ")[1], false);
 				break;
 
 			case "delete_job":
-				//runProcessFromString(mess);
 				stopJob(mess.split(" ")[1], true);
 				break;
 		}

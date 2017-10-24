@@ -11,11 +11,12 @@ import org.glassfish.jersey.media.multipart.FormDataParam;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.util.*;
+import java.util.List;
 
 /**
  * Created by nico on 4/09/2017.
@@ -57,46 +58,25 @@ public class JobResource {
 	}
 
 	@GET
-	@Path("{id}/{folder}/filenames")
+	@Path("{id}/{folder}/{request}")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response getJobResFilenames(@PathParam("id") String jobId, @PathParam("folder") String folder) {
+	public Response getDirectoryDetails(@PathParam("id") String jobId, @PathParam("folder") String folder, @PathParam("request") String request) {
 		try {
-			String responseJSON = null;
+			java.nio.file.Path jobDirectory = Master.getJobDir(jobId, folder);
 
-			if (folder.equals("resources")) {
-				responseJSON = getDirFilenames(Master.getJobResourcesDir(jobId)).toString();
-			} else if (folder.equals("results")) {
-				responseJSON = getDirFilenames(Master.getJobResultsDir(jobId)).toString();
-			}
+			if (jobDirectory != null) {
+				JsonObject returnObj = new JsonObject();
+				switch (request) {
+					case "filedetails":
+						returnObj.add("data", getDirFileDetails(jobDirectory));
+						break;
+					case "filenames":
+						returnObj.add("data", getDirFilenames(jobDirectory));
+						break;
+				}
 
-			if (responseJSON != null) {
-				return Response.ok(responseJSON).build();
-			}
-
-		} catch (NullPointerException e) {
-			e.printStackTrace();
-		}
-
-		return Response.status(Response.Status.NOT_FOUND).build();
-	}
-
-	@GET
-	@Path("{id}/{folder}/filedetails")
-	@Produces(MediaType.APPLICATION_JSON)
-	public Response getJobResFileDetails(@PathParam("id") String jobId, @PathParam("folder") String folder) {
-		try {
-			JsonObject returnObj = new JsonObject();
-
-			if (folder.equals("resources")) {
-				returnObj.add("data", getDirFileDetails(Master.getJobResourcesDir(jobId)));
-			} else if (folder.equals("results")) {
-				returnObj.add("data", getDirFileDetails(Master.getJobResultsDir(jobId)));
-			}
-
-			if (returnObj.has("data")) {
 				return Response.ok(returnObj.toString()).build();
 			}
-
 		} catch (NullPointerException e) {
 			e.printStackTrace();
 		}
@@ -104,36 +84,41 @@ public class JobResource {
 		return Response.status(Response.Status.NOT_FOUND).build();
 	}
 
-	private JsonArray getDirFilenames(File directory) {
+	private JsonArray getDirFilenames(java.nio.file.Path directory) {
 		JsonArray filenames = new JsonArray();
 
 		try {
-			for (File file : directory.listFiles()) {
-				if (file.isFile()) {
-					filenames.add("./" + file.getName());
-				}
-			}
-		} catch (NullPointerException e) {
+			Files.list(directory)
+					.filter(file->Files.isRegularFile(file))
+					.forEach(file->filenames.add("./" + file.getFileName()));
+		}
+		catch (IOException e) {
 			e.printStackTrace();
 		}
 
 		return filenames;
 	}
 
-	private JsonArray getDirFileDetails(File directory) {
+	private JsonArray getDirFileDetails(java.nio.file.Path directory) {
 		JsonArray folderDetails = new JsonArray();
 
 		try {
-			for (File file : directory.listFiles()) {
-				if (file.isFile()) {
-					JsonObject fileDetails = new JsonObject();
-					fileDetails.addProperty("filename", file.getName());
-					fileDetails.addProperty("size", humanReadableByteCount(file.length(), true));
+			Files.list(directory)
+					.filter(file->Files.isRegularFile(file))
+					.forEach(file-> {
+						JsonObject fileDetails = new JsonObject();
+						fileDetails.addProperty("filename", file.getFileName().toString());
 
-					folderDetails.add(fileDetails);
-				}
-			}
-		} catch (NullPointerException e) {
+						try {
+							fileDetails.addProperty("size", humanReadableByteCount(Files.size(file), true));
+						} catch (IOException e) {
+							fileDetails.addProperty("size", "NA");
+						}
+
+						folderDetails.add(fileDetails);
+					});
+		}
+		catch (IOException e) {
 			e.printStackTrace();
 		}
 
@@ -146,26 +131,21 @@ public class JobResource {
 	@Produces(MediaType.APPLICATION_OCTET_STREAM)
 	public Response getFile(@PathParam("id") String jobId, @PathParam("filename") String filename, @PathParam("folder") String folder) {
 		try {
-			File file = null;
-			File[] filesInFolder=null;
+			java.nio.file.Path foundFile = null;
 
-			if (folder.equals("resources")) {
-				filesInFolder = Master.getJobResourcesDir(jobId).listFiles();
-			} else if (folder.equals("results")) {
-				filesInFolder = Master.getJobResultsDir(jobId).listFiles();
-			}
+			java.nio.file.Path jobDirectory = Master.getJobDir(jobId, folder);
 
-			if (filesInFolder != null) {
-				for (File f : filesInFolder) {
-					if (f.getName().equals(filename)) {
-						file = f;
-					}
+			if (jobDirectory != null) {
+				try {
+					foundFile = Files.list(jobDirectory).filter(f-> f.getFileName().toString().equals(filename)).findFirst().orElse(null);
+				} catch (IOException e) {
+					e.printStackTrace();
 				}
 			}
 
-			if (file != null && file.exists()) {
-				Response.ResponseBuilder response = Response.ok(file);
-				response.header("Content-Disposition", "attachment; filename=\""+filename+"\"");
+			if (foundFile != null && Files.exists(foundFile) && Files.isRegularFile(foundFile)) {
+				Response.ResponseBuilder response = Response.ok(foundFile.toFile());
+				response.header("Content-Disposition", String.format("attachment; filename=\"%s\"", filename));
 				return response.build();
 			}
 
@@ -182,11 +162,11 @@ public class JobResource {
 	@Produces(MediaType.APPLICATION_OCTET_STREAM)
 	public Response getConfigFile(@PathParam("id") String jobId) {
 		try {
-			File file = Master.getJobConfigFile(jobId);
+			java.nio.file.Path file = Master.getJobConfigFile(jobId);
 
-			if (file != null && file.exists()) {
-				Response.ResponseBuilder response = Response.ok(file);
-				response.header("Content-Disposition", "attachment; filename=\""+file.getName()+"\"");
+			if (file != null && Files.exists(file) && Files.isRegularFile(file)) {
+				Response.ResponseBuilder response = Response.ok(file.toFile());
+				response.header("Content-Disposition", String.format("attachment; filename=\"%s\"", file.getFileName()));
 				return response.build();
 			}
 
@@ -206,7 +186,7 @@ public class JobResource {
 										   @FormDataParam("file") InputStream file,
 										   @FormDataParam("file") FormDataContentDisposition fileDisposition) {
 
-		File jobResDir = Master.getJobResourcesDir(jobId);
+		java.nio.file.Path jobResDir = Master.getJobResourcesDir(jobId);
 
 		if (jobResDir != null) {
 			return Response.ok(uploadSingleFile(file, fileDisposition, jobResDir)).build();
@@ -223,7 +203,7 @@ public class JobResource {
 											  @FormDataParam("files") List<FormDataBodyPart> bodyParts,
 											  @FormDataParam("files") FormDataContentDisposition fileDispositions) {
 
-		File jobResDir = Master.getJobResourcesDir(jobId);
+		java.nio.file.Path jobResDir = Master.getJobResourcesDir(jobId);
 
 		if (jobResDir != null) {
 			try {
@@ -239,7 +219,7 @@ public class JobResource {
 
 	// https://www.geekmj.org/jersey/jax-rs-multiple-files-upload-example-408/
 	// Single file upload
-	String uploadSingleFile(InputStream file, FormDataContentDisposition fileDisposition, File destinationDir) {
+	String uploadSingleFile(InputStream file, FormDataContentDisposition fileDisposition, java.nio.file.Path destinationDir) {
 		String fileName = fileDisposition.getFileName();
 
 		saveFile(file, fileName, destinationDir);
@@ -248,7 +228,7 @@ public class JobResource {
 	}
 
 	// Multiple file upload
-	String uploadMultipleFiles(List<FormDataBodyPart> bodyParts, FormDataContentDisposition fileDisposition, File destinationDir) throws Exception {
+	String uploadMultipleFiles(List<FormDataBodyPart> bodyParts, FormDataContentDisposition fileDisposition, java.nio.file.Path destinationDir) throws Exception {
 
 		StringBuffer fileDetails = new StringBuffer("");
 
@@ -272,10 +252,10 @@ public class JobResource {
 		return fileDetails.toString();
 	}
 
-	private void saveFile(InputStream file, String name, File dir) {
+	private void saveFile(InputStream file, String name, java.nio.file.Path dir) {
 		try {
 			/* Change directory path */
-			java.nio.file.Path path = FileSystems.getDefault().getPath(dir.getPath()+java.io.File.separator +name);
+			java.nio.file.Path path = FileSystems.getDefault().getPath(dir.toString(),name);
 			/* Save InputStream as file */
 			Files.copy(file, path, StandardCopyOption.REPLACE_EXISTING);
 		} catch (IOException ie) {
@@ -289,7 +269,7 @@ public class JobResource {
 	public Response processUploadedFiles(@PathParam("id") String jobId) {
 		JsonObject responseObj = new JsonObject();
 
-		JsonObject formDataFromFile = Master.processInactiveJobResourcesDir(jobId);
+		JsonObject formDataFromFile = Master.processJobNewUploadedFiles(jobId);
 		if (formDataFromFile!=null) {
 			responseObj.add("form_data", formDataFromFile);
 		}

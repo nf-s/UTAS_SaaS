@@ -62,13 +62,16 @@ public class Worker implements Runnable {
 
 		id = UUID.randomUUID().toString();
 
+		jCloudsNova = new JCloudsNova();
+
 		init();
 	}
 
 	// Already existing worker - NEED TO UPDATE
-	public Worker(String id, String h, int p, WorkerType workerType) {
+	public Worker(String id, String h, int p, WorkerType workerType, Flavor instanceFlavour) {
 		hostname = h;
 		workerPort = p;
+		this.instanceFlavour = instanceFlavour;
 
 		type = workerType;
 
@@ -76,6 +79,8 @@ public class Worker implements Runnable {
 		status = WorkerStatus.INITIATING;
 
 		this.id =id;
+
+		jCloudsNova = new JCloudsNova(id, instanceFlavour);
 
 		init();
 	}
@@ -94,13 +99,13 @@ public class Worker implements Runnable {
 		if (getStatus() == WorkerStatus.CREATING) {
 			createNewWorker();
 
-			if (getStatus() != WorkerStatus.CREATE_FAIL) {
+			if (getStatus() == WorkerStatus.CREATED) {
 				// Create socket and attempt to connect to worker
-				startWorkerSocketThread(true);
+				startWorkerSocketThread();
 			}
 
 		} else {
-			startWorkerSocketThread(false);
+			startWorkerSocketThread();
 		}
 
 		if (workerSocketThread != null) {
@@ -170,7 +175,6 @@ public class Worker implements Runnable {
 	private void createNewWorker() {
 		if (Master.DEBUG)
 			System.out.println(TAG+ " creating new worker");
-		jCloudsNova = new JCloudsNova();
 
 		if (jCloudsNova.createWorker(id, type)) {
 			// Successfully launched instance - set hostname
@@ -194,11 +198,11 @@ public class Worker implements Runnable {
 	 *  + If not - the socket will use the default settings (SOCKET_CREATEWORKER_CONN_RETRY_DELAY_MS and SOCKET_DEFAULT_CONN_RETRY_ATTEMPTS)
 	 *
 	 */
-	private void startWorkerSocketThread(Boolean connectingToNewCreatedWorker) {
+	private void startWorkerSocketThread() {
 		if (workerSocketThread == null) {
 			workerSocketClient = new SocketClient(getTag() + " [WorkerClient]", hostname, workerPort);
 
-			if (connectingToNewCreatedWorker) {
+			if (getStatus()==WorkerStatus.CREATED) {
 				workerSocketClient.setConnectionRetryDelayMs(SOCKET_CREATEWORKER_CONN_RETRY_DELAY_MS);
 				workerSocketClient.setConnectionRetries(0); // 0 - indicates unlimited retries
 			} else {
@@ -212,7 +216,7 @@ public class Worker implements Runnable {
 				switch (currentStatus) {
 					case CONNECTED:
 						// If connected to a newly created worker - reset connection retry parameters to default
-						if (connectingToNewCreatedWorker) {
+						if (getStatus()==WorkerStatus.CREATED) {
 							jCloudsNova.launchedSuccessfully();
 
 							workerSocketClient.setConnectionRetryDelayMs(SOCKET_DEFAULT_CONN_RETRY_DELAY_MS);
@@ -321,7 +325,7 @@ public class Worker implements Runnable {
 
 		// Add all job estimated execution time for jobs in queue
 		for (Job job : jobQueue) {
-			time += job.estimateExecutionTimeInMs(jCloudsNova.getInstanceFlavour());
+			time += job.getEstimatedExecutionTimeForFlavourInMs(jCloudsNova.getInstanceFlavour());
 			if (job.getStatus() == JobStatus.RUNNING) {
 				time -= job.getUsedCpuTimeInMs();
 			}

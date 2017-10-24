@@ -60,7 +60,8 @@ master/src/main/webapp/js/brutusin-json-forms.js
 /master/src/main/webapp/js/mainNOTUSED.js
 master/src/main/webapp/worker/
 
-/master/job/
-
 
 master/src/main/webapp/worker/worker-1.0-all.jar
+/master/jobs/
+/master/job/
+/master/job_templates/

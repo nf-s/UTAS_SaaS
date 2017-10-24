@@ -42,7 +42,7 @@ public class WorkerJobResource extends JobResource{
 											   @FormDataParam("file") InputStream file,
 											   @FormDataParam("file") FormDataContentDisposition fileDisposition) {
 
-		File jobResDir = Master.getJobResultsDir(jobId);
+		java.nio.file.Path jobResDir = Master.getJobResultsDir(jobId);
 
 		if (jobResDir != null) {
 			return Response.ok(uploadSingleFile(file, fileDisposition, jobResDir)).build();
@@ -59,7 +59,7 @@ public class WorkerJobResource extends JobResource{
 												  @FormDataParam("files") List<FormDataBodyPart> bodyParts,
 												  @FormDataParam("files") FormDataContentDisposition fileDispositions) {
 
-		File jobResDir = Master.getJobResultsDir(jobId);
+		java.nio.file.Path jobResDir = Master.getJobResultsDir(jobId);
 
 		if (jobResDir != null) {
 			try {

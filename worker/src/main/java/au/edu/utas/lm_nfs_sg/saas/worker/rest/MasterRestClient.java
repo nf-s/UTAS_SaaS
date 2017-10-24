@@ -2,6 +2,7 @@ package au.edu.utas.lm_nfs_sg.saas.worker.rest;
 
 import au.edu.lm_nf_sg.saas.common.job.JobStatus;
 import au.edu.lm_nf_sg.saas.common.worker.WorkerStatus;
+import au.edu.utas.lm_nfs_sg.saas.worker.Worker;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonArray;
 
@@ -41,32 +42,29 @@ public class MasterRestClient {
 
 	public static void setMasterHostname(String masterH) {
 		MasterRestClient.masterHostname = masterH;
-		MasterRestClient.masterRootUrl = "http://"+masterH+":8081/api/worker/";
+		MasterRestClient.masterRootUrl = String.format("http://%s:8081/api/worker/", masterH);
 	}
 
 	//================================================================================
 	// Job REST "adapter" functions
 	//================================================================================
 
-	public Boolean downloadJobConfigFile(String jobId, File destinationFolder) {
-		String url = masterRootUrl +"job/"+jobId+"/config/file";
+	public Boolean downloadJobFile(String jobId, String folder, String filename, File destinationFolder) {
+		String url = String.format("%sjob/%s/%s/%s", masterRootUrl, jobId, folder, filename);
 		return getFile(url, destinationFolder);
 	}
 
-	public Boolean downloadJobResources(String jobId, File destinationFolder) {
+	public Boolean downloadJobFolder(String jobId, String folder, File destinationFolder) {
 		LinkedList<String> failedDownloads = new LinkedList<>();
 
-		String filenamesJsonString = getJsonString(masterRootUrl +"job/"+jobId+"/resources/filenames");
+		String filenamesJsonString = getJsonString(String.format("%sjob/%s/%s/filedetails", masterRootUrl, jobId, folder));
 
 		if (filenamesJsonString != null) {
-			JsonArray filenames = new JsonParser().parse(filenamesJsonString).getAsJsonArray();
+			JsonArray filenames = new JsonParser().parse(filenamesJsonString).getAsJsonObject().getAsJsonArray("data");
 
 			filenames.forEach(filename->{
-				// To get rid of './' at start of filename
-				String[] filenameSplit = filename.getAsString().split("/");
-				String filenameString = filenameSplit[filenameSplit.length-1];
-
-				String url = masterRootUrl +"job/"+jobId+"/resources/file/"+filenameString;
+				String filenameString = filename.getAsJsonObject().get("filename").getAsString();
+				String url = String.format("%sjob/%s/%s/file/%s", masterRootUrl, jobId, folder, filenameString);
 
 				if (!getFile(url, destinationFolder)) {
 					failedDownloads.add(filenameString);
@@ -82,7 +80,7 @@ public class MasterRestClient {
 
 	public Boolean uploadJobResultsFolder(String jobId, File sourceFolder) {
 		Boolean ret = false;
-		String url = masterRootUrl+"job/"+jobId+"/results/file";
+		String url = String.format("%sjob/%s/results/file", masterRootUrl, jobId);
 
 		try {
 			for (File f : sourceFolder.listFiles()) {
@@ -97,7 +95,7 @@ public class MasterRestClient {
 	}
 
 	public Boolean updateJobStatus(String jobId, JobStatus status) {
-		return putJsonString(masterRootUrl+"job/"+jobId+"/status", "{\"status\":\""+status.toString()+"\"}");
+		return putJsonString(String.format("%sjob/%s/status", masterRootUrl, jobId), String.format("{\"status\":\"%s\"}", status.toString()));
 	}
 
 	//================================================================================
@@ -105,7 +103,7 @@ public class MasterRestClient {
 	//================================================================================
 
 	public Boolean updateWorkerStatus(String workerId, WorkerStatus status) {
-		return putJsonString(masterRootUrl+workerId+"/status", "{\"status\":\""+status.toString()+"\"}");
+		return putJsonString(String.format("%s%s/status", masterRootUrl, workerId), String.format("{\"status\":\"%s\"}", status.toString()));
 	}
 
 	//================================================================================
@@ -113,6 +111,8 @@ public class MasterRestClient {
 	//================================================================================
 
 	private Boolean getFile(String url, File destinationFolder) {
+		Worker.sendMessageToMasterSocket(TAG+" request: "+url);
+
 		Response response = client.target(url).request()
 				.accept(MediaType.APPLICATION_OCTET_STREAM)
 				.get();
@@ -152,6 +152,7 @@ public class MasterRestClient {
 
 	private String getJsonString(String url) {
 		System.out.printf("%s Getting JSON: %s%n", TAG, url);
+		Worker.sendMessageToMasterSocket(TAG+" request:"+url);
 		Response response = client.target(url).request()
 				.accept(MediaType.APPLICATION_JSON)
 				.get();

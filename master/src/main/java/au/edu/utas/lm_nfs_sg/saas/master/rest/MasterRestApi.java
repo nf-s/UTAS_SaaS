@@ -23,6 +23,7 @@ public class MasterRestApi extends ResourceConfig implements ServletContextListe
 		register(WorkerResource.class);
 
 		Master.init();
+
 	}
 
 	public void contextInitialized(ServletContextEvent sce) {
@@ -30,6 +31,6 @@ public class MasterRestApi extends ResourceConfig implements ServletContextListe
 	}
 	public void contextDestroyed(ServletContextEvent sce) {
 		System.out.println("SHUTDOWN");
-		Master.shutdown();
+		//Master.shutdown();
 	}
 }

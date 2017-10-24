@@ -27,14 +27,14 @@ public class JCloudsNova implements Closeable {
 	// Static Properties
 	// ------------------------------------------------------------------------
 	public static final String TAG="<JCloudsNova>";
+	public static final String DEFAULT_IMAGE_ID = "210b3c59-3238-4abf-9447-dffbcca5cd1b";
+	public static final Long DEFAULT_LAUNCH_TIME_MS = 180000L;
 
 	// Nectar cloud config constants
 	private static final String NECTAR_ENDPOINT = "https://keystone.rc.nectar.org.au:5000/v2.0/";
 	private static final String NECTAR_REGION = "Melbourne";
 	private static final String NECTAR_PROVIDER = "openstack-nova";
 
-	// Instance constants
-	public static final String DEFAULT_IMAGE_ID = "210b3c59-3238-4abf-9447-dffbcca5cd1b";
 	private static final String DEFAULT_KEYPAIR_NAME = "KIT318";
 	private static final String DEFAULT_SECURITY_GROUPS_NAME = "saas";
 	private static final String DEFAULT_FLAVOUR_NAME = "m2.small";
@@ -123,6 +123,13 @@ public class JCloudsNova implements Closeable {
 		}
     }
 
+	public JCloudsNova(String id, Flavor flav) {
+		this();
+
+		this.instanceId = id;
+		this.instanceFlavour = flav;
+	}
+
 	// ------------------------------------------------------------------------
 	// Accessors & Settors
 	// ------------------------------------------------------------------------
@@ -200,6 +207,7 @@ public class JCloudsNova implements Closeable {
     Boolean createWorker(String workerId, String imageId, Flavor flavour, WorkerType workerType){
 		try {
 			startCreateCalendar = Calendar.getInstance();
+			instanceFlavour = flavour;
 
 			System.out.println(getTag()+" Creating new cloud instance with flavour ="+flavour.getName());
 
@@ -226,7 +234,6 @@ public class JCloudsNova implements Closeable {
 			ServerCreated server=serverApi.create(workerId,imageId,flavour.getId(),options1);
 
 			instanceId = server.getId();
-			instanceFlavour = flavour;
 
 			close();
 
@@ -366,7 +373,7 @@ public class JCloudsNova implements Closeable {
 		}
 		// Or return default time - 3 minutes
 		else {
-			returnEstimate = (long) 3 * 60 * 1000;
+			returnEstimate = DEFAULT_LAUNCH_TIME_MS;
 		}
 
 		System.out.println(TAG+" Estimated time to create worker (flavour="+instanceFlavour.getName()+") is "+returnEstimate.toString()+" ms");

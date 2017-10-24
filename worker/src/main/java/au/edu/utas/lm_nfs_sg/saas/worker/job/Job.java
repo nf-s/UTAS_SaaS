@@ -25,6 +25,7 @@ public class Job implements Runnable {
 	private MasterRestClient masterRestClient;
 
 	private File jobDirectory;
+	private File jobConfigDirectory;
 	private File jobResourcesDirectory;
 	private File jobResultsDirectory;
 
@@ -149,6 +150,9 @@ public class Job implements Runnable {
 		jobDirectory = new File("job"+java.io.File.separator + jobId + java.io.File.separator);
 		jobDirectory.mkdirs();
 
+		jobConfigDirectory = new File("job"+java.io.File.separator + jobId + java.io.File.separator +"config");
+		jobConfigDirectory.mkdirs();
+
 		jobResourcesDirectory = new File("job"+java.io.File.separator + jobId + java.io.File.separator +"resources");
 		jobResourcesDirectory.mkdirs();
 
@@ -156,14 +160,14 @@ public class Job implements Runnable {
 		jobResultsDirectory.mkdirs();
 
 		addNewLogMessage("Downloading job config files from Master...");
-		if (masterRestClient.downloadJobConfigFile(jobId, jobDirectory)) {
+		if(masterRestClient.downloadJobFolder(jobId, "config", jobConfigDirectory)) {
 			addNewLogMessage("Successfully downloaded job config files from Master");
 		} else {
 			addNewLogMessage("FAILED to downloaded job config from Master");
 		}
 
 		addNewLogMessage("Downloading job resources from Master...");
-		if(masterRestClient.downloadJobResources(jobId, jobResourcesDirectory)) {
+		if(masterRestClient.downloadJobFolder(jobId, "resources", jobResourcesDirectory)) {
 			addNewLogMessage("Successfully downloaded job resources from Master");
 		} else {
 			addNewLogMessage("FAILED to downloaded job resources from Master");
@@ -175,7 +179,7 @@ public class Job implements Runnable {
 		addNewLogMessage("Job starting");
 		setStatus(JobStatus.STARTING_ON_WORKER);
 
-		ProcessBuilder builder = new ProcessBuilder("/opt/csiro.au/spark_batch_fsp/bin/spark-batch", "../job_config.xml");
+		ProcessBuilder builder = new ProcessBuilder("/opt/csiro.au/spark_batch_fsp/bin/spark-batch", "../config/job_config.xml");
 		builder.directory(jobResourcesDirectory.getAbsoluteFile());
 
 		try {

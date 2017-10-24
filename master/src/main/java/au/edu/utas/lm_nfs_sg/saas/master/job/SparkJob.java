@@ -16,11 +16,11 @@ import org.jdom2.input.SAXBuilder;
 import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
 
-import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Objects;
 
 public class SparkJob extends Job {
@@ -36,8 +36,8 @@ public class SparkJob extends Job {
 	}
 
 	@Override
-	public void setJobConfigJsonString(String config) {
-		super.setJobConfigJsonString(config);
+	public void updateConfigFromJsonString(String config) {
+		super.updateConfigFromJsonString(config);
 
 		// Create Spark XML File
 		try {
@@ -47,17 +47,16 @@ public class SparkJob extends Job {
 			JsonParser parser = new JsonParser();
 			JsonObject obj = (JsonObject) parser.parse(config);
 
-			for (Map.Entry<String, JsonElement> entry : obj.entrySet())
-			{
+			obj.entrySet().forEach(entry -> {
 				Element input = new Element("input");
 				input.setAttribute(new Attribute("globalname", entry.getKey()));
 				input.addContent(entry.getValue().getAsString());
 				root.addContent(input);
-			}
+			});
 
 			document.setContent(root);
 
-			String fileName = getJobConfigDirectory()+java.io.File.separator +"job_config.xml";
+			String fileName = getConfigDirectory()+java.io.File.separator +"job_config.xml";
 
 			FileWriter writer = new FileWriter(fileName);
 			XMLOutputter outputter = new XMLOutputter();
@@ -65,7 +64,7 @@ public class SparkJob extends Job {
 			outputter.output(document, writer);
 			writer.close(); // close writer
 
-			setJobConfigFile(new File(fileName));
+			setConfigFile(Paths.get(fileName));
 
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -73,49 +72,44 @@ public class SparkJob extends Job {
 	}
 
 	@Override
-	public JsonObject processJobResourcesDir() {
+	public JsonObject processNewUploadedFilesInResourcesDir() {
+		JsonObject returnJsonObject = new JsonObject();
 		// Go through job resources directory and see if any Spark XML files have been uploaded
-		for (File file : getJobResourcesDirectory().listFiles()) {
-			if (Objects.equals(FilenameUtils.getExtension(file.getName()), "xml")) {
-				try {
-					SAXBuilder saxBuilder = new SAXBuilder();
-					Document document = null;
+		try {
+			Files.list(getResourcesDirectory()).forEach(file-> {
+				if (Objects.equals(FilenameUtils.getExtension(file.getFileName().toString()), "xml")) {
+					try {
+						SAXBuilder saxBuilder = new SAXBuilder();
+						Document document = null;
 
-					System.out.println("send XML");
-					document = saxBuilder.build(file);
-					Element classElement = document.getRootElement();
+						System.out.println("send XML");
+						document = saxBuilder.build(file.toFile());
+						Element classElement = document.getRootElement();
 
-					// This is the test to see if the XML file is a Spark XML File
-					// I.e. is the root tag <operation>
-					if (classElement.getName().equals("operation")) {
+						// This is the test to see if the XML file is a Spark XML File
+						// I.e. is the root tag <operation>
+						if (classElement.getName().equals("operation")) {
 
-						List<Element> list = classElement.getChildren();
+							classElement.getChildren()
+									.forEach(e->returnJsonObject
+											.add(e.getAttribute("globalname").getValue(), new JsonPrimitive(e.getValue())));
 
-						JsonObject obj = new JsonObject();
+							Path newFilename = Paths.get(getConfigDirectory() + "/" + file.getFileName().toString());
 
-						for (Element e : list) {
-							obj.add(e.getAttribute("globalname").getValue(), new JsonPrimitive(e.getValue()));
+							Files.deleteIfExists(newFilename);
+							Files.move(file, newFilename);
 						}
-
-						File newFilename = new File(getJobConfigDirectory() + "/" + file.getName());
-
-						if (newFilename.exists() && !newFilename.isDirectory()) {
-							newFilename.delete();
-						} else {
-							file.renameTo(newFilename);
-						}
-
-
-						return obj;
+					} catch (JDOMException | IOException e) {
+						e.printStackTrace();
 					}
-				} catch (JDOMException | IOException e) {
-					e.printStackTrace();
-				}
-			} else if (Objects.equals(FilenameUtils.getExtension(file.getName()), "json")) {
+				} else if (Objects.equals(FilenameUtils.getExtension(file.getFileName().toString()), "json")) {
 
-			}
+				}
+			});
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
-		return null;
+		return returnJsonObject;
 	}
 
 }

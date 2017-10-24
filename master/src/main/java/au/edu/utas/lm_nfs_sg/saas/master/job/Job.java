@@ -12,7 +12,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import org.jclouds.openstack.nova.v2_0.domain.Flavor;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -29,7 +28,37 @@ public class Job {
 	// ------------------------------------------------------------------------
 	private static final String  TAG = "<Job>";
 
-	public static Map<String, String> jobClassStringMap = new HashMap<String, String>();
+	private static final String JOB_BASE_DIR_NAME = "jobs";
+	private static final String JOB_TEMPLATES_DIR_NAME = "job_templates";
+
+	private static final String  RESULTS_DIR_NAME = "results";
+	private static final String  RESOURCES_DIR_NAME = "resources";
+	private static final String  CONFIG_DIR_NAME = "config";
+
+	static Map<String, String> jobClassStringMap = new HashMap<String, String>();
+
+	public static final Path jobDirectory;
+	private static final Path jobTemplatesDirectory;
+
+	public static final SimpleDateFormat deadlineDateTimeStringFormat;
+
+	static {
+
+		jobDirectory = Paths.get(JOB_BASE_DIR_NAME);
+		jobTemplatesDirectory = Paths.get(JOB_TEMPLATES_DIR_NAME);
+
+		try {
+			if (!Files.exists(jobDirectory))
+				Files.createDirectory(jobDirectory);
+			if (!Files.exists(jobTemplatesDirectory))
+				Files.createDirectory(jobTemplatesDirectory);
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.exit(0);
+		}
+
+		deadlineDateTimeStringFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.ENGLISH);
+	}
 
 	// ------------------------------------------------------------------------
 	// General Job Properties
@@ -41,9 +70,9 @@ public class Job {
 	private JobType jobType;
 	private WorkerType workerType;
 	private Worker worker;
-	private String jobImageId;
+	private String instanceImageId;
 
-	private String jobDescription;
+	private String description;
 
 	private Calendar createdDate;
 	private Calendar startDate;
@@ -53,12 +82,12 @@ public class Job {
 	// ------------------------------------------------------------------------
 	// Config and Directories/Files Properties
 	// ------------------------------------------------------------------------
-	private File jobConfigFile;
-	private String jobConfigJsonString;
-	private File jobDirectory;
-	private File jobConfigDirectory;
-	private File jobResourcesDirectory;
-	private File jobResultsDirectory;
+	private Path configFile;
+	private String configJsonString;
+	private Path baseDirectory;
+	private Path configDirectory;
+	private Path resourcesDirectory;
+	private Path resultsDirectory;
 
 	private JsonObject launchOptions;
 	private Calendar deadline;
@@ -85,25 +114,32 @@ public class Job {
 		createdDate = Calendar.getInstance();
 
 		// Set default values:
-		if (jobImageId==null)
-			jobImageId = JCloudsNova.DEFAULT_IMAGE_ID;
+		if (instanceImageId ==null)
+			instanceImageId = JCloudsNova.DEFAULT_IMAGE_ID;
 		if (jobType==null)
 			jobType = JobType.BOUNDED;
 		if (workerType==null)
 			workerType = WorkerType.PUBLIC;
 
 		// Create required directories
-		jobDirectory = new File("job"+java.io.File.separator +id);
-		jobDirectory.mkdirs();
+		baseDirectory = Paths.get(jobDirectory.toString(), id);
+		resourcesDirectory = Paths.get(baseDirectory.toString(), RESOURCES_DIR_NAME);
+		resultsDirectory = Paths.get(baseDirectory.toString(), RESULTS_DIR_NAME);
+		configDirectory = Paths.get(baseDirectory.toString(), CONFIG_DIR_NAME);
 
-		jobResourcesDirectory = new File("job"+java.io.File.separator +id+java.io.File.separator +"resources");
-		jobResourcesDirectory.mkdirs();
-		
-		jobResultsDirectory = new File("job"+java.io.File.separator +id+java.io.File.separator +"results");
-		jobResultsDirectory.mkdirs();
-
-		jobConfigDirectory = new File("job"+java.io.File.separator+id+java.io.File.separator +"config");
-		jobConfigDirectory.mkdirs();
+		try {
+			if (!Files.exists(baseDirectory))
+				Files.createDirectory(baseDirectory);
+			if (!Files.exists(resourcesDirectory))
+				Files.createDirectory(resourcesDirectory);
+			if (!Files.exists(resultsDirectory))
+				Files.createDirectory(resultsDirectory);
+			if (!Files.exists(configDirectory))
+				Files.createDirectory(configDirectory);
+		} catch (IOException e) {
+			e.printStackTrace();
+			//System.exit(0);
+		}
 	}
 
 	// ------------------------------------------------------------------------
@@ -128,9 +164,9 @@ public class Job {
 		return worker;
 	}
 
-	public String getJobImageId () {return jobImageId;}
-	void setJobImageId(String imageId) {
-		jobImageId = imageId;
+	public String getInstanceImageId() {return instanceImageId;}
+	void setInstanceImageId(String imageId) {
+		instanceImageId = imageId;
 	}
 
 	public WorkerType getWorkerType() {return workerType;}
@@ -141,6 +177,13 @@ public class Job {
 	public JobType getJobType() {return jobType;}
 	void setJobType(JobType type) {
 		jobType = type;
+	}
+
+
+	public Path getResourcesDirectory() { return resourcesDirectory; }
+	public Path getConfigDirectory() { return configDirectory;	}
+	public Path getResultsDirectory() {
+		return resultsDirectory;
 	}
 
 	// ------------------------------------------------------------------------
@@ -210,7 +253,7 @@ public class Job {
 	}
 
 	// Should override this with sublcass method
-	public Long estimateExecutionTimeInMs(Flavor instanceFlavour) {
+	private Long estimateExecutionTimeInMs(Flavor instanceFlavour) {
 		Long returnEstimate = (long) (45 * 1000);
 		//45 Seconds
 		return returnEstimate;
@@ -218,7 +261,6 @@ public class Job {
 
 	public Calendar getDeadline() { return deadline; }
 	private void setDeadline(Calendar d) {  deadline=d; }
-
 
 	// ------------------------------------------------------------------------
 	// Calendar/Time Utility Functions
@@ -259,7 +301,6 @@ public class Job {
 	// ------------------------------------------------------------------------
 	// Config/Options Accessors
 	// ------------------------------------------------------------------------
-
 	public JsonElement getSerializedJsonElement() {
 		GsonBuilder gsonB = new GsonBuilder();
 		gsonB.registerTypeAdapter(Job.class, new JobJSONSerializer());
@@ -267,22 +308,71 @@ public class Job {
 		return gson.toJsonTree(this, Job.class);
 	}
 
-	public File getJobConfigFile() {
-		return jobConfigFile;
+	public Path getConfigFile() {
+		return configFile;
 	}
-	void setJobConfigFile(File file) {
-		jobConfigFile = file;
-	}
-
-	public void setJobConfigJsonString(String config) {
-		jobConfigJsonString = config;
+	void setConfigFile(Path file) {
+		configFile = file;
 	}
 
-	public String getJobConfigJsonString() {
-		if (jobConfigJsonString != null) {
-			return jobConfigJsonString;
+	public String getConfigJsonString() {
+		if (configJsonString != null) {
+			return configJsonString;
 		}
 		return "";
+	}
+	public void updateConfigFromJsonString(String config) {
+		configJsonString = config;
+		configHasBeenUpdated();
+	}
+
+	public Boolean loadTemplate(String templateName) {
+		Path templateFolder = Paths.get(jobTemplatesDirectory.toString(), templateName);
+
+		if (Files.exists(templateFolder) && Files.isDirectory(templateFolder) && Files.isReadable(templateFolder)) {
+
+			Path templateResourcesFolder = Paths.get(templateFolder.toString(), RESOURCES_DIR_NAME);
+
+			// Copy resources to job directory
+			try {
+				Files.list(templateResourcesFolder).forEach(file -> {
+					try {
+						Files.copy(file, Paths.get(resourcesDirectory.toString(), file.getFileName().toString()));
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				});
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+
+			Path templateConfigFolder = Paths.get(templateFolder.toString(), CONFIG_DIR_NAME);
+
+			// Copy resources to job directory
+			try {
+				Files.list(templateConfigFolder).forEach(file -> {
+					try {
+						Files.copy(file, Paths.get(configDirectory.toString(), file.getFileName().toString()));
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				});
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+
+			configHasBeenUpdated();
+
+			return true;
+		}
+
+		return false;
+	}
+
+	// Whenever the config has been updated:
+	// + Reset the estimated running times
+	private void configHasBeenUpdated() {
+		estimatedRunningTimeForFlavour = new HashMap<>();
 	}
 
 	public void setLaunchOptionsFromJson(JsonObject launchOpt) {
@@ -291,10 +381,8 @@ public class Job {
 		String deadlineString = launchOptions.get("deadline").getAsString();
 		if (deadlineString != null && !deadlineString.equals("")) {
 			Calendar deadline = Calendar.getInstance();
-
-			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.ENGLISH);
 			try {
-				deadline.setTime(sdf.parse(deadlineString));
+				deadline.setTime(deadlineDateTimeStringFormat.parse(deadlineString));
 			} catch (ParseException e) {
 				e.printStackTrace();
 				deadline = null;
@@ -302,24 +390,14 @@ public class Job {
 
 			setDeadline(deadline);
 		}
-
-		estimatedRunningTimeForFlavour = new HashMap<>();
 	}
 
 	// ------------------------------------------------------------------------
 	// Directories/Files Accessors and Methods
 	// ------------------------------------------------------------------------
 
-	public File getJobResourcesDirectory() { return jobResourcesDirectory; }
-	public File getJobConfigDirectory() {
-		return jobConfigDirectory;
-	}
-	public File getJobResultsDirectory() {
-		return jobResultsDirectory;
-	}
 
-
-	// ProcessJobResourcesDir - need a better name
+	// processNewUploadedFilesInResourcesDir - need a better name
 	// This method is called after a "queue" of job resource files have finished uploading
 	// I.e. Through new job form in Web Client
 
@@ -327,7 +405,7 @@ public class Job {
 	// (eg. the xml file for CSIRO Spark) - to then convert the file into JSON which can be used to "autofill" the form
 
 	// This method can be overridden by job subclasses
-	public JsonObject processJobResourcesDir() {
+	public JsonObject processNewUploadedFilesInResourcesDir() {
 		return null;
 	}
 
@@ -354,7 +432,6 @@ public class Job {
 	// ------------------------------------------------------------------------
 	// Job Methods
 	// ------------------------------------------------------------------------
-
 	public void activateWithJson(JsonObject launchOptions) {
 		setStatus(JobStatus.INITIATING);
 		setLaunchOptionsFromJson(launchOptions);
@@ -390,7 +467,7 @@ public class Job {
 	public Boolean delete() {
 		setStatus(JobStatus.DELETING_ON_MASTER);
 
-		deleteDirRecursively(Paths.get(jobDirectory.getAbsolutePath()));
+		deleteDirRecursively(baseDirectory);
 		return true;
 	}
 
