@@ -114,7 +114,6 @@ public class SparkJob extends Job {
 	}
 
 
-
 	@Override
 	Long estimateExecutionTimeInMs(Flavor instanceFlavour) {
 		switch (getDescription()) {

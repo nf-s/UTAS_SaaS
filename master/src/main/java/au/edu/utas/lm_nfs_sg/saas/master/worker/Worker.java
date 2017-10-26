@@ -8,14 +8,14 @@ import au.edu.utas.lm_nfs_sg.saas.master.Master;
 import au.edu.utas.lm_nfs_sg.saas.master.job.Job;
 import org.jclouds.openstack.nova.v2_0.domain.Flavor;
 
+import javax.validation.constraints.Null;
 import java.io.IOException;
 import java.util.Calendar;
+import java.util.Comparator;
 import java.util.Deque;
-import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.function.Consumer;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class Worker implements Runnable {
 
@@ -23,7 +23,7 @@ public class Worker implements Runnable {
 	private static final int SOCKET_DEFAULT_CONN_RETRY_DELAY_MS = 50;
 	private static final int SOCKET_DEFAULT_CONN_RETRY_ATTEMPTS = 10; // 500ms max (10 attempts * 50ms apart)
 	private static final int SOCKET_CREATEWORKER_CONN_RETRY_DELAY_MS = 500;
-	private static final int SOCKET_CREATEWORKER_CONN_RETRY_ATTEMPTS = 100; // 5 minutes max (100 attempts * 500ms apart)
+	private static final int SOCKET_CREATEWORKER_CONN_RETRY_ATTEMPTS = 0; // 5 minutes max (100 attempts * 500ms apart)
 
 	private JCloudsNova jCloudsNova;
 	private Flavor instanceFlavour;
@@ -42,6 +42,7 @@ public class Worker implements Runnable {
 	private Boolean available = true;
 
 	private Calendar connectionTimeoutTime;
+	private AtomicLong usedCpuTimeInMs = new AtomicLong(0L);
 
 	private WorkerStatus status;
 	private StatusChangeListener statusChangeListener;
@@ -304,9 +305,10 @@ public class Worker implements Runnable {
 	 *  When a job finishes on worker - remove from Queue
 	 */
 	public void jobFinished(Job job) {
+		usedCpuTimeInMs.getAndAdd(job.getUsedCpuTimeInMs());
 		removeJobFromQueue(job);
 		if (getNumJobs() <= 1) {
-			Master.workerIsFree(type);
+			Master.workerIsFree(getType());
 		}
 	}
 
@@ -327,6 +329,27 @@ public class Worker implements Runnable {
 		}
 	}
 
+	public Job peekLastJobFromQueue() {
+		synchronized (jobQueueSynchronise) {
+			return jobQueue.peekLast();
+		}
+	}
+
+	public Job getJobWithTightestDeadline() {
+		Job jobWithTightestDeadline = null;
+		synchronized (jobQueueSynchronise) {
+			try {
+				if (jobQueue.size() > 1) {
+					jobWithTightestDeadline = jobQueue.stream().filter(job -> job.getStatus() == JobStatus.QUEUED_ON_WORKER)
+							.sorted(Comparator.comparingLong(Job::getDifferenceBetweenDeadlineAndEstimatedFinishTimeInMs)).findFirst().orElseGet(null);
+				}
+			} catch (NullPointerException ignored) {
+
+			}
+		}
+		return jobWithTightestDeadline;
+	}
+
 	public void rejectMostRecentUncompletedJob() {
 		synchronized (jobQueueSynchronise) {
 			if (getNumJobs() > 1) {
@@ -336,6 +359,15 @@ public class Worker implements Runnable {
 					stopJob(rejectJob);
 					rejectJob.rejectedFromWorker();
 				}
+			}
+		}
+	}
+
+	public void rejectJob(Job j) {
+		synchronized (jobQueueSynchronise) {
+			if (jobQueue.contains(j)) {
+				jobQueue.remove(j);
+				j.rejectedFromWorker();
 			}
 		}
 	}
@@ -409,7 +441,16 @@ public class Worker implements Runnable {
 				case ACTIVE:
 					// If any jobs are assigned on master server - BUT haven't been sent to Worker (on worker server)
 					// Send assign command for each job
-					jobQueue.stream().filter(job -> job.getStatus() == JobStatus.ASSIGNED_ON_MASTER).forEach(this::sendAssignJobCommand);
+					if (status == WorkerStatus.CREATED) {
+						synchronized (jobQueueSynchronise) {
+							jobQueue.forEach(this::sendAssignJobCommand);
+						}
+					}
+					else {
+						synchronized (jobQueueSynchronise) {
+							jobQueue.stream().filter(job -> job.getStatus() == JobStatus.ASSIGNED_ON_MASTER).forEach(this::sendAssignJobCommand);
+						}
+					}
 					break;
 			}
 
@@ -468,6 +509,17 @@ public class Worker implements Runnable {
 
 	public Flavor getInstanceFlavour() {
 		return instanceFlavour;
+	}
+
+	public Long getUsedCpuTimeInMs() {
+		return usedCpuTimeInMs.get();
+	}
+
+	public Long getCreateTimeInMs() {
+		if (jCloudsNova != null) {
+			return jCloudsNova.getTimeTakenToCreate();
+		} else
+			return 0L;
 	}
 
 	// ------------------------------------------------------------------------

@@ -365,6 +365,13 @@ public class JCloudsNova implements Closeable {
 			return 0L;
 	}
 
+	public Long getTimeTakenToCreate() {
+		if(timeTakenToCreate != null)
+			return timeTakenToCreate;
+		else
+			return getElapsedCreationTimeInMs();
+	}
+
 	public Long getEstimatedCreationTimeInMs() {
 		return estimateCreationTimeInMs(instanceFlavour);
 	}
@@ -373,7 +380,7 @@ public class JCloudsNova implements Closeable {
     	Long returnEstimate;
 
     	// If the specified instance flavour has creation time data saved
-		if (instanceFlavourCreationTime != null && !instanceFlavourCreationTime.containsKey(instanceFlavour)) {
+		if (instanceFlavourCreationTime != null && instanceFlavourCreationTime.containsKey(instanceFlavour)) {
 			Long averageCreationTime = 0L;
 
 			for(Long creationTime:instanceFlavourCreationTime.get(instanceFlavour)) {

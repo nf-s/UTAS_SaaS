@@ -255,7 +255,7 @@ public class Job implements Runnable {
 
 	public synchronized void stopJob(Boolean deleteFiles) {
 		if ((status != JobStatus.STOPPED) && (status != JobStatus.FINISHED) && (status != JobStatus.ERROR)) {
-			setStatus(JobStatus.STOPPING_ON_WORKER);
+			//setStatus(JobStatus.STOPPING_ON_WORKER);
 			if (jobProcess != null) {
 				jobProcess.destroy();
 			}
@@ -263,16 +263,16 @@ public class Job implements Runnable {
 				jobProcessInputStreamThreadsRunning = false;
 			}
 			stopThreadRunning();
-			setStatus(JobStatus.STOPPED);
+			//setStatus(JobStatus.STOPPED);
 		}
 
 		if (deleteFiles) {
 			if (jobDirectory.exists()) {
-				setStatus(JobStatus.DELETING_ON_WORKER);
+				//setStatus(JobStatus.DELETING_ON_WORKER);
 				addNewLogMessage("Deleting job files");
 				deleteDirRecursively(Paths.get(jobDirectory.getAbsolutePath()));
 				addNewLogMessage("All job files deleted");
-				setStatus(JobStatus.DELETED);
+				//setStatus(JobStatus.DELETED);
 			}
 		}
 	}

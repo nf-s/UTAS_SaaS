@@ -12,6 +12,7 @@ import org.jclouds.openstack.nova.v2_0.domain.Flavor;
 
 import java.nio.file.Path;
 import java.util.*;
+import java.util.stream.Stream;
 
 /**
  * Created by nico on 25/05/2017.
@@ -27,7 +28,7 @@ public final class Master {
 	//public static final String HOSTNAME = "nfshome.duckdns.org";
 	public static final int PORT = 8081;
 
-	public static final int MINIMUM_JOB_DEADLINE_MS_FROM_NOW = 300000; // 5 minutes
+	public static final int MINIMUM_JOB_DEADLINE_MS_FROM_NOW = 180000; // 3 minutes
 
 	private static Map<String, Job> inactiveJobs;
 	private static Map<String, Job> activeJobs;
@@ -89,34 +90,44 @@ public final class Master {
 	}
 
 	static void testVaryDeadlines() {
-		String jobTemplate = "small-test(94)";
+
 		System.out.println(TAG+" Executing test with varying deadlines");
 
 		int numJobs = 10;
+		final int deadlineMinutes = 5;
 		final int deadlineModifier = 4;
 
-		new Thread(()->{
+		String[] jobTemplates = new String[5];
+		jobTemplates[0]="small-test(94)";
+		jobTemplates[1]="medium-test(Forcett)";
+		jobTemplates[2]="small-test(94)";
+		jobTemplates[3]="medium-test(Forcett)";
+		jobTemplates[4]="large-test(Wangary)";
+
+		new Thread(() -> {
 			try {
 				Thread.sleep(1000);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
 
-			for (int i = 0; i<numJobs; i++) {
+			for (int j = 0; j < numJobs; j++) {
+				int finalJ = j;
 				new Thread(() -> {
 					Job newJob = createJob();
 
-					newJob.loadTemplate(jobTemplate);
+					newJob.loadTemplate(jobTemplates[finalJ %jobTemplates.length]);
 
 					Calendar deadline = Calendar.getInstance();
 
-					// Deadline = estimated execution time for job on largest flavour MULTIPLIED BY the deadlineModifier
-					deadline.add(Calendar.MILLISECOND,
-							deadlineModifier*newJob.getEstimatedExecutionTimeForFlavourInMs(JCloudsNova.getLargestFlavour()).intValue());
+					int averageExecTime = (int) ((newJob.getEstimatedExecutionTimeForFlavourInMs(JCloudsNova.getDefaultFlavour())
+							+newJob.getEstimatedExecutionTimeForFlavourInMs(JCloudsNova.getLargestFlavour()))/2);
+
+					deadline.add(Calendar.MILLISECOND, averageExecTime*deadlineModifier);
 
 					activateJob(newJob.getId(), (JsonObject) new JsonParser()
-							.parse("{\"deadline\":\""+
-									Job.deadlineDateTimeStringFormat.format(deadline.getTime())+"\"}"));
+							.parse("{\"deadline\":\"" +
+									Job.deadlineDateTimeStringFormat.format(deadline.getTime()) + "\"}"));
 				}).start();
 
 				try {
@@ -126,6 +137,7 @@ public final class Master {
 				}
 			}
 		}).start();
+
 	}
 
 	//================================================================================
@@ -464,14 +476,20 @@ public final class Master {
 				Flavor workerFlavour = null;
 				switch (workerType) {
 					case PRIVATE:
-						workerFlavour = JCloudsNova.getFlavours().values().stream()
-								.sorted(Comparator.comparingLong(job::getEarliestStartTimeForFlavorInMsFromNow))
-								.findFirst().orElse(null);
+						try {
+							workerFlavour = JCloudsNova.getFlavours().values().stream()
+									// If earliest start time is negative -> can't make deadline
+									.filter(flavour -> job.getEarliestStartTimeForFlavorInMsFromNow(flavour) >= 0)
+									.sorted(Comparator.comparingLong(job::getEarliestStartTimeForFlavorInMsFromNow))
+									.findFirst().orElse(null);
+						} catch (NullPointerException ignored) {
+
+						}
 						break;
 				}
 
 				if (workerFlavour == null) {
-					workerFlavour = JCloudsNova.getDefaultFlavour();
+					workerFlavour = JCloudsNova.getLargestFlavour();
 				}
 
 				assignJob(job, createNewWorker(workerType, workerFlavour));
@@ -523,17 +541,58 @@ public final class Master {
 		}
 	}
 
-	// When a worker is free (has 0 active jobs) -> Reject a job from the worker with the most jobs (if it has more than 2 jobs)
 	public static void workerIsFree(WorkerType workerType) {
 		synchronized (jobAssignQueueSynchronise) {
 			System.out.printf("%s worker is free%n", TAG);
+
 			try {
 				workers.get(workerType).values().stream()
 						.filter(worker -> worker.getNumJobs() > 2)
-						.sorted(Comparator.comparingInt(Worker::getNumJobs).reversed()).findFirst().ifPresent(Worker::rejectMostRecentUncompletedJob);
+						.sorted(Comparator.comparingInt(Worker::getNumJobs).reversed())
+						.findFirst().ifPresent(Worker::rejectMostRecentUncompletedJob);
 			} catch (NullPointerException ignored) {
 
 			}
+
+			if (workers.get(workerType).values().stream()
+					.filter(worker -> worker.getNumJobs() > 0).count() == 0) {
+				allWorkersAreFree(workerType);
+			}
 		}
+	}
+
+	// When a worker is free (has 0 active jobs) -> Reject a job from the worker with the most jobs (if it has more than 2 jobs)
+	public static void workerIsFreeNew(Worker freeWorker) {
+		synchronized (jobAssignQueueSynchronise) {
+			WorkerType freeWorkerType = freeWorker.getType();
+			System.out.printf("%s worker is free%n", TAG);
+			Job jobToAssign = null;
+			try {
+				jobToAssign = workers.get(freeWorkerType).values().stream()
+						.filter(worker -> worker.getNumJobs() > 1)
+						.flatMap(worker -> Stream.of(worker.getJobWithTightestDeadline()))
+						.sorted(Comparator.comparingLong(o -> o.getImprovementInFinishTime(freeWorker.getInstanceFlavour())))
+						.filter(o->o.getImprovementInFinishTime(freeWorker.getInstanceFlavour())<0).findFirst().orElse(null);
+
+			} catch (NullPointerException ignored) {
+
+			}
+
+			if (jobToAssign != null) {
+				jobToAssign.getWorker().rejectJob(jobToAssign);
+				jobToAssign.assignToWorker(freeWorker);
+			}
+
+			if (workers.get(freeWorkerType).values().stream()
+					.filter(worker -> worker.getNumJobs() > 0).count() == 0) {
+				allWorkersAreFree(freeWorkerType);
+			}
+		}
+	}
+
+	public static void allWorkersAreFree(WorkerType workerType) {
+		System.out.printf("%s all workers are free%n", TAG);
+		workers.get(workerType).forEach((workerId, worker)->
+				System.out.printf("%s Worker:%s CPU time used:%d Create time: %d%n", TAG, workerId, worker.getUsedCpuTimeInMs(), worker.getCreateTimeInMs()));
 	}
 }

@@ -128,6 +128,8 @@ public class Job {
 		resultsDirectory = Paths.get(baseDirectory.toString(), RESULTS_DIR_NAME);
 		configDirectory = Paths.get(baseDirectory.toString(), CONFIG_DIR_NAME);
 
+		estimatedRunningTimeForFlavour = new HashMap<>();
+
 		try {
 			if (!Files.exists(baseDirectory))
 				Files.createDirectory(baseDirectory);
@@ -293,6 +295,13 @@ public class Job {
 	public Long getDeadlineInMsFromNow() {return getCalendarInMsFromNow(getDeadline());}
 	private void setDeadline(Calendar d) {  deadline=d; }
 
+	public Long getDifferenceBetweenDeadlineAndEstimatedFinishTimeInMs() {
+		return getDeadline().getTimeInMillis()-getEstimatedFinishDate().getTimeInMillis();
+	}
+
+	public Long getImprovementInFinishTime(Flavor flav) {
+		return getEstimatedExecutionTimeForFlavourInMs(flav)-getCalendarInMsFromNow(getEstimatedFinishDate());
+	}
 	// ------------------------------------------------------------------------
 	// Calendar/Time Utility Functions
 	// ------------------------------------------------------------------------
@@ -480,13 +489,12 @@ public class Job {
 
 		setWorker(w);
 
-		if (jobType==JobType.UNBOUNDED)
+		if (jobType==JobType.BOUNDED)
 			setEstimatedFinishDate();
 	}
 
 	public void rejectedFromWorker() {
 		setStatus(JobStatus.REJECTED_BY_WORKER);
-		setWorker(null);
 	}
 
 	// Called from setStatus() - triggered by worker node setting status
@@ -495,7 +503,7 @@ public class Job {
 	}
 
 	public void stop() {
-		setStatus(JobStatus.STOPPING_ON_MASTER);
+		setStatus(JobStatus.STOPPED);
 		if (getWorker() != null)
 			getWorker().stopJob(this);
 	}
@@ -506,11 +514,12 @@ public class Job {
 	}
 
 	public Boolean delete() {
+		setStatus(JobStatus.DELETED);
 		if (getWorker() != null) {
 			getWorker().deleteJob(this);
 		}
 
-		setStatus(JobStatus.DELETING_ON_MASTER);
+
 
 		deleteDirRecursively(baseDirectory);
 		return true;
@@ -518,12 +527,14 @@ public class Job {
 
 	// Called from setStatus() - triggered by worker node setting status
 	private void onFinish() {
-		if (getWorker() != null)
-			getWorker().jobFinished(this);
 		setFinishDate();
 		setUsedCpuTimeInMs();
 		if (Master.DEBUG)
 			System.out.printf("%s Execution time: %dms%n", getTag(), getUsedCpuTimeInMs());
+
+		if (getWorker() != null)
+			getWorker().jobFinished(this);
+
 	}
 
 	// ------------------------------------------------------------------------
