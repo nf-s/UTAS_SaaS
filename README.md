@@ -60,7 +60,7 @@ Largest flavour which can be created
     + The Master server executables are located in `Master/build/output/master `
         + `start.bat`, `start.sh`
         + `stop.bat`, `stop.sh`...
-        + `Master/build/output/master ` folder contains dependencies needed to run the Master server
+        + all dependencies are included
     
 + `Master:startInplace`, `Master:stopInplace`, ...
     + Can be used for running Master in IDE
