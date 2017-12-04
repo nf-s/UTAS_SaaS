@@ -116,6 +116,9 @@ public class SparkJob extends Job {
 
 	@Override
 	Long estimateExecutionTimeInMs(Flavor instanceFlavour) {
+		// Put execution time prediction HERE
+
+		// Currently the estimated execution time is determined according to the statements below (with three test cases and three different flavours)
 		switch (getDescription()) {
 			case "small-test(94)":
 				switch (instanceFlavour.getName()) {
@@ -148,7 +151,6 @@ public class SparkJob extends Job {
 				}
 				break;
 		}
-
 
 		return super.estimateExecutionTimeInMs(instanceFlavour);
 	}

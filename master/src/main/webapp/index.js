@@ -3,7 +3,6 @@
 // -----------------------------------------------------------
 API_KEY = "hello";
 const MASTER_API_ROOTURL = "http://144.6.225.200:8081/api/client/";
-//const MASTER_API_ROOTURL = "http://localhost:8081/api/client/";
 
 // -----------------------------------------------------------
 // VUE SETUP

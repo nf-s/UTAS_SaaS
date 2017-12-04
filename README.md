@@ -1,1 +1,82 @@
-# UTAS_SaaS
+# SparkCloud
+
+## To get started
+**Four Modules:**
++ Master
++ Worker
++ Comms (Socket communication library)
++ Common
+    + Worker status and Job status enums
+    + Worker type and Job type enums
+
+
+### Dependencies
+Gradle should handle everything.  
+I recommend using IntelliJ, as Gradle will download required dependencies on project import.
+
+### NectarCloud Credentials (JSON File)
+Modify properties in master/src/main/resources/nectarcloud_config - SAMPLE.json
+      
+      {
+          "osTenantName": "",
+          "osUsername": "",
+          "credential": ""
+      }
+      
+Then rename file to `nectarcloud_config.json`
+
+### NectarCloud Configuration (in JCloudsNova.java)
+`DEFAULT_IMAGE_ID = "210b3c59-3238-4abf-9447-dffbcca5cd1b";`
+  
+`NECTAR_ENDPOINT = "https://keystone.rc.nectar.org.au:5000/v2.0/";`
+
+`NECTAR_REGION = "Melbourne";`
+
+`DEFAULT_KEYPAIR_NAME = "KIT318";`
+
+**Security Group**  
+The security group must have inbound TCP traffic allowed for the post specified for the Master REST API (in *Set Hostname/Port of Master*).
+As this port is used for the Java Socket server running on the Worker node.  
+`DEFAULT_SECURITY_GROUPS_NAME = "saas";  `
+
+`DEFAULT_FLAVOUR_NAME = "m2.small";`
+
+Largest flavour which can be created  
+`LARGEST_FLAVOUR_NAME = "m2.large";`
+
+`DEFAULT_AVAILABILITY_ZONE = "tasmania";`
+
+### Gradle Tasks
++ `Worker:shadowJar`
+    + Builds a 'fat jar' of worker module, which contains dependencies needed (excluding Spark)
++ `Worker:moveToPublicFolder`
+    + Moves the 'fat jar' to a public folder which is accessible from worker nodes.
+    + Newly created workers will download the latest jar from this location
+    
++ `Master:buildAllProducts`
+    + Builds all components of master module using Gretty plugin
+        + https://akhikhl.github.io/gretty-doc/Feature-overview.html
+    + This includes web servlets, web server starter ...   
+    + The Master server executables are located in `Master/build/output/master `
+        + `start.bat`, `start.sh`
+        + `stop.bat`, `stop.sh`...
+        + `Master/build/output/master ` folder contains dependencies needed to run the Master server
+    
++ `Master:startInplace`, `Master:stopInplace`, ...
+    + Can be used for running Master in IDE
+    + The server will automatically update as changes are made to the code
+    
+    
+### Set Hostname/Port of Master
+The hostname and port of the master node must be set at the start of `master/src/main/java/.../Master.java`
+
+    public static final String HOSTNAME = "144.6.225.200";
+    public static final int PORT = 8081;
+    
+It must also be set in `master/src/main/webapp/index.js` for the web client
+
+    const MASTER_API_ROOTURL = "http://144.6.225.200:8081/api/client/";
+    
+
+### Known Issues
+Large file uploads using web client can timeout (without HTTP response). This is due to a bug in Jetty web server.

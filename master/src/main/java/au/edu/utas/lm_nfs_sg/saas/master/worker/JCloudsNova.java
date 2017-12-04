@@ -28,7 +28,7 @@ public class JCloudsNova implements Closeable {
 	// ------------------------------------------------------------------------
 	public static final String TAG="<JCloudsNova>";
 	public static final String DEFAULT_IMAGE_ID = "210b3c59-3238-4abf-9447-dffbcca5cd1b";
-	public static final Long DEFAULT_LAUNCH_TIME_MS = 180000L; // 3 Minutes
+	public static final Long DEFAULT_ESTIMATED_INSTANCE_CREATION_TIME = 180000L; // 3 Minutes
 
 	// Nectar cloud config constants
 	private static final String NECTAR_ENDPOINT = "https://keystone.rc.nectar.org.au:5000/v2.0/";
@@ -391,7 +391,7 @@ public class JCloudsNova implements Closeable {
 		}
 		// Or return default time - 3 minutes
 		else {
-			returnEstimate = DEFAULT_LAUNCH_TIME_MS;
+			returnEstimate = DEFAULT_ESTIMATED_INSTANCE_CREATION_TIME;
 		}
 
 		System.out.println(TAG+" Estimated time to create worker (flavour="+instanceFlavour.getName()+") is "+returnEstimate.toString()+" ms");

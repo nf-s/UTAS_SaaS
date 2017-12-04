@@ -23,32 +23,43 @@ public final class Master {
 	//================================================================================
 
 	public static final Boolean DEBUG = true;
+
+	// Tag for debugging purposes
 	public static final String TAG = "<Master>";
+
+	// The hostname and port of the Master node (this MUST be correct as it is passed to all worker nodes on creation)
 	public static final String HOSTNAME = "144.6.225.200";
-	//public static final String HOSTNAME = "nfshome.duckdns.org";
 	public static final int PORT = 8081;
 
+	// The threshold for creating a new worker (i.e. a deadline must be over 3 minutes late inorder to trigger worker creation)
 	public static final int MINIMUM_JOB_DEADLINE_MS_FROM_NOW = 180000; // 3 minutes
 
 	private static Map<String, Job> inactiveJobs;
 	private static Map<String, Job> activeJobs;
 
+	// Map of queued jobs to assign for each WorkerType
 	private static Map<WorkerType, LinkedList<Job>> queuedUnassignedJobs;
+	// Map of workers for each WorkerType
 	private static Map<WorkerType, Map<String, Worker>> workers;
 
 	// This Map of Booleans is used to keep track of which WorkerTypes are assigning jobs
 	// - Only one job per WorkerType can be assigning at any one time
 	private static volatile Map<WorkerType, Boolean> isAssigningJob;
 
+	// ... the same applies to creating new workers
 	private static volatile Map<WorkerType, Boolean> isCreatingNewWorker;
 
 	private static JCloudsNova jCloudsNova;
+
 	private static Boolean initiated = false;
 
+	// Synchronise objects
 	private static final Boolean assignSynchronise = true;
 	private static final Boolean jobAssignQueueSynchronise = true;
 
+
 	static {
+		// Initiate Worker, Job and Boolean maps/lists
 		inactiveJobs = Collections.synchronizedMap(new HashMap<String, Job>());
 		activeJobs = Collections.synchronizedMap(new HashMap<String, Job>());
 
@@ -68,16 +79,21 @@ public final class Master {
 
 	public static void init(){
 		if (!initiated) {
+			// A JCloudsNova object must be created to request information from NectarCloud APIs
 			jCloudsNova = new JCloudsNova();
 
 			initiated=true;
 
-			//Worker worker = new Worker("nfsspark-test-worker", "130.56.250.14", 8081, WorkerType.PRIVATE, "bd7eec8f-bccd-4d53-9371-ec8871df917c", JCloudsNova.getDefaultFlavour());
-			//workers.get(WorkerType.PRIVATE).put(worker.getWorkerId(), worker);
+			/* Example of adding an existing worker node
+					Worker worker = new Worker("nfsspark-test-worker", "130.56.250.14", 8081, WorkerType.PRIVATE, "bd7eec8f-bccd-4d53-9371-ec8871df917c", JCloudsNova.getDefaultFlavour());
+					workers.get(WorkerType.PRIVATE).put(worker.getWorkerId(), worker);
 
-			//new Thread(worker).start();
+					new Thread(worker).start();
+			*/
 
-			//Master.testVaryDeadlines();
+			/* Example of running a test
+					Master.testVaryDeadlines();
+			*/
 		}
 	}
 
@@ -89,12 +105,26 @@ public final class Master {
 		jCloudsNova.terminateAll();
 	}
 
+
+	/**
+	 * Performance Evaluation function. Can use three different job templates with varying deadlines
+	 * and can submit multiple jobs at a constant rate.
+	 *
+	 * Possible job templates are:
+	 * 		small-test(94)
+	 * 		medium-test(Forcett)
+ 	 * 		large-test(Wangary)
+	 *
+	 * 	The results of each trial are printed when a job successfully completes. Worker resource utilisation is printed
+	 * 	after all jobs complete {@see #allWorkersAreFree()}
+	 */
 	static void testVaryDeadlines() {
 
 		System.out.println(TAG+" Executing test with varying deadlines");
 
 		int numJobs = 10;
 		final int deadlineMinutes = 5;
+		// Deadline modifier is multiplied the estimated execution time for a given job template
 		final int deadlineModifier = 4;
 
 		String[] jobTemplates = new String[5];
@@ -130,6 +160,7 @@ public final class Master {
 									Job.deadlineDateTimeStringFormat.format(deadline.getTime()) + "\"}"));
 				}).start();
 
+				// Delay between job submission
 				try {
 					Thread.sleep(100);
 				} catch (InterruptedException e) {
@@ -142,6 +173,8 @@ public final class Master {
 
 	//================================================================================
 	// Job REST "Accessors"
+	//
+	// All of the following functions are called from REST Api
 	//================================================================================
 
 	public static boolean updateJobStatusFromWorkerNode(String jobId, String jobStatus) {
@@ -305,6 +338,12 @@ public final class Master {
 	//================================================================================
 	// Job Functions
 	//================================================================================
+
+	/**
+	 * Returns a new SparkJob object with a new random UUID string and adds it to the inactive job list
+	 *
+	 * @return     Job
+	 */
 	public static Job createJob() {
 		String newJobId = UUID.randomUUID().toString();
 		Job newJob = new SparkJob(newJobId);
@@ -312,6 +351,12 @@ public final class Master {
 		return newJob;
 	}
 
+	/**
+	 * Activates job with the given jobId, and launch options. The job is removed from the inactive job list and added
+	 * to the active job list. The job is then assigned.
+	 *
+	 * @return      Boolean - True if job exists, false otherwise
+	 */
 	public static Boolean activateJob(String jobId, JsonObject launchOptions) {
 		Job job = getInactiveJob(jobId);
 		if (job != null) {
@@ -325,7 +370,10 @@ public final class Master {
 		return false;
 	}
 
-	private static void assignJob(Job job, Worker worker) {
+	/**
+	 * Assigns job to given worker. If a job is rejected by the worker, it is reassigned to another worker
+	 */
+	private static void assignedJob(Job job, Worker worker) {
 		job.assignToWorker(worker);
 		job.setOnStatusChangeListener((job1, currentStatus) -> {
 			switch (currentStatus) {
@@ -340,6 +388,12 @@ public final class Master {
 		worker.assignJob(job);
 	}
 
+	/**
+	 * Stops job with given JobId, given job is already running. It is removed from the active job list and added to the
+	 * inactive job list
+	 *
+	 * @return      Boolean - True if job exists, false otherwise
+	 */
 	public static Boolean stopJob(String jobId) {
 		Job job = getActiveJob(jobId);
 		if (job != null) {
@@ -353,6 +407,11 @@ public final class Master {
 		return false;
 	}
 
+	/**
+	 * Deletes job with given JobId
+	 *
+	 * @return      Boolean - True if job exists, false otherwise
+	 */
 	public static Boolean deleteJob(String jobId) {
 		Job job = getActiveJob(jobId);
 		if (job != null) {
@@ -377,6 +436,11 @@ public final class Master {
 	// Worker Functions
 	//================================================================================
 
+	/**
+	 * Create new worker with given workerType and workerFlavour.
+	 *
+	 * @return      Worker
+	 */
 	private static Worker createNewWorker(WorkerType workerType, Flavor workerFlavour) {
 		return createNewWorker(workerType, workerFlavour, 1);
 	}
@@ -403,7 +467,7 @@ public final class Master {
 					newWorker.rejectAllUncompletedJobs();
 					break;
 
-				// Worker created successfully - now waiting for instance...
+				// Worker created successfully - now waiting for instance to start...
 				case CREATING:
 					synchronized (assignSynchronise) {
 						isCreatingNewWorker.put(workerType, false);
@@ -418,6 +482,10 @@ public final class Master {
 		return newWorker;
 	}
 
+	/**
+	 * Find suitable worker for job. If no worker exists, a new one is created.
+	 *
+	 */
 	public static void assignJobToWorker(final Job job) {
 		assignJobToWorker(job, false, false);
 	}
@@ -460,7 +528,7 @@ public final class Master {
 
 			// If a suitable worker was found - assign job
 			if (mostFreeWorker != null) {
-				assignJob(job, mostFreeWorker);
+				assignedJob(job, mostFreeWorker);
 
 				// If there are inactive jobs to assign - keep assigning
 				if (queuedUnassignedJobs.get(workerType).size() != 0) {
@@ -492,7 +560,7 @@ public final class Master {
 					workerFlavour = JCloudsNova.getLargestFlavour();
 				}
 
-				assignJob(job, createNewWorker(workerType, workerFlavour));
+				assignedJob(job, createNewWorker(workerType, workerFlavour));
 				synchronized (assignSynchronise) {
 					isAssigningJob.put(workerType, false);
 				}
@@ -592,6 +660,7 @@ public final class Master {
 
 	public static void allWorkersAreFree(WorkerType workerType) {
 		System.out.printf("%s all workers are free%n", TAG);
+
 		workers.get(workerType).forEach((workerId, worker)->
 				System.out.printf("%s Worker:%s CPU time used:%d Create time: %d%n", TAG, workerId, worker.getUsedCpuTimeInMs(), worker.getCreateTimeInMs()));
 	}
