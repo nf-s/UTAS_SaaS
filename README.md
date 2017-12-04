@@ -76,6 +76,13 @@ The hostname and port of the master node must be set at the start of `master/src
 It must also be set in `master/src/main/webapp/index.js` for the web client
 
     const MASTER_API_ROOTURL = "http://144.6.225.200:8081/api/client/";
+
+
+### Configuration of Spark
+The location of spark can be updated in `worker/src/main/java/.../job/Job.java`
+Currently it is:
+
+    /opt/csiro.au/spark_batch_fsp/bin/spark-batch
     
 
 ### Known Issues
