@@ -23,6 +23,7 @@ public final class Master {
 	//================================================================================
 
 	public static final Boolean DEBUG = true;
+	public static final Boolean TESTING = true;
 
 	// Tag for debugging purposes
 	public static final String TAG = "<Master>";
@@ -91,9 +92,20 @@ public final class Master {
 					new Thread(worker).start();
 			*/
 
-			/* Example of running a test
-					Master.testVaryDeadlines();
-			*/
+
+			/* Example performance evaluation
+					PerformanceEvaluation performanceEvaluation = new PerformanceEvaluation(jCloudsNova, 5, 4, 10, new String[]{"s", "m"});
+					performanceEvaluation.addToQueue(new PerformanceEvaluation(jCloudsNova, 5, 4, 20, new String[]{"s", "m"}));
+					performanceEvaluation.addToQueue(new PerformanceEvaluation(jCloudsNova, 5, 4, 30, new String[]{"s", "m"}));
+					performanceEvaluation.addToQueue(new PerformanceEvaluation(jCloudsNova, 5, 4, 40, new String[]{"s", "m"}));
+
+					performanceEvaluation.addToQueue(new PerformanceEvaluation(jCloudsNova, 5, 2, 10, new String[]{"s", "m"}));
+					performanceEvaluation.addToQueue(new PerformanceEvaluation(jCloudsNova, 5, 8, 10, new String[]{"s", "m"}));
+					performanceEvaluation.addToQueue(new PerformanceEvaluation(jCloudsNova, 5, 16, 10, new String[]{"s", "m"}));
+
+					// Start first
+					new Thread(performanceEvaluation).start();
+					*/
 		}
 	}
 
@@ -103,72 +115,6 @@ public final class Master {
 		workers.forEach((workerType,workers)->workers.forEach((id, worker)->worker.stopRunning()));
 
 		jCloudsNova.terminateAll();
-	}
-
-
-	/**
-	 * Performance Evaluation function. Can use three different job templates with varying deadlines
-	 * and can submit multiple jobs at a constant rate.
-	 *
-	 * Possible job templates are:
-	 * 		small-test(94)
-	 * 		medium-test(Forcett)
- 	 * 		large-test(Wangary)
-	 *
-	 * 	The results of each trial are printed when a job successfully completes. Worker resource utilisation is printed
-	 * 	after all jobs complete {@see #allWorkersAreFree()}
-	 */
-	static void testVaryDeadlines() {
-
-		System.out.println(TAG+" Executing test with varying deadlines");
-
-		int numJobs = 10;
-		final int deadlineMinutes = 5;
-		// Deadline modifier is multiplied the estimated execution time for a given job template
-		final int deadlineModifier = 4;
-
-		String[] jobTemplates = new String[5];
-		jobTemplates[0]="small-test(94)";
-		jobTemplates[1]="medium-test(Forcett)";
-		jobTemplates[2]="small-test(94)";
-		jobTemplates[3]="medium-test(Forcett)";
-		jobTemplates[4]="large-test(Wangary)";
-
-		new Thread(() -> {
-			try {
-				Thread.sleep(1000);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-
-			for (int j = 0; j < numJobs; j++) {
-				int finalJ = j;
-				new Thread(() -> {
-					Job newJob = createJob();
-
-					newJob.loadTemplate(jobTemplates[finalJ %jobTemplates.length]);
-
-					Calendar deadline = Calendar.getInstance();
-
-					int averageExecTime = (int) ((newJob.getEstimatedExecutionTimeForFlavourInMs(JCloudsNova.getDefaultFlavour())
-							+newJob.getEstimatedExecutionTimeForFlavourInMs(JCloudsNova.getLargestFlavour()))/2);
-
-					deadline.add(Calendar.MILLISECOND, averageExecTime*deadlineModifier);
-
-					activateJob(newJob.getId(), (JsonObject) new JsonParser()
-							.parse("{\"deadline\":\"" +
-									Job.deadlineDateTimeStringFormat.format(deadline.getTime()) + "\"}"));
-				}).start();
-
-				// Delay between job submission
-				try {
-					Thread.sleep(100);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-			}
-		}).start();
-
 	}
 
 	//================================================================================
@@ -333,6 +279,10 @@ public final class Master {
 
 	private static synchronized void removePublicWorkerFromList(Worker worker) {
 		workers.get(worker.getType()).remove(worker.getWorkerId());
+	}
+
+	private static synchronized void clearWorkersMaps() {
+		workers.forEach((workerType, workerList) -> workerList.clear());
 	}
 
 	//================================================================================
@@ -661,7 +611,13 @@ public final class Master {
 	public static void allWorkersAreFree(WorkerType workerType) {
 		System.out.printf("%s all workers are free%n", TAG);
 
-		workers.get(workerType).forEach((workerId, worker)->
-				System.out.printf("%s Worker:%s CPU time used:%d Create time: %d%n", TAG, workerId, worker.getUsedCpuTimeInMs(), worker.getCreateTimeInMs()));
+		if (TESTING) {
+			ArrayList<String> results = new ArrayList<>();
+			workers.get(workerType).forEach((workerId, worker)->
+					results.add(String.format("%s Worker:%s CPU time used:%d Create time: %d%n", TAG, worker.getInstanceFlavour().getName(), worker.getUsedCpuTimeInMs(), worker.getCreateTimeInMs())));
+			PerformanceEvaluation.getCurrentPerformanceEvaluation().addWorkerResults(results);
+			clearWorkersMaps();
+			PerformanceEvaluation.getCurrentPerformanceEvaluation().notifyThread();
+		}
 	}
 }

@@ -392,9 +392,12 @@ public class Worker implements Runnable {
 
 			// If worker is creating - or created and waiting for worker to come online
 			// Add worker creation time (remaining) to queue completion time
-			if (status == WorkerStatus.CREATING || status == WorkerStatus.CREATED) {
+			if (status == WorkerStatus.NOT_CREATED || status == WorkerStatus.CREATING || status == WorkerStatus.CREATED) {
 				time += Math.max(jCloudsNova.getEstimatedCreationTimeInMs() - jCloudsNova.getElapsedCreationTimeInMs(), 0);
+				System.out.println(getTag() + " added creation time = "+time);
 			}
+
+
 
 			// Add all job estimated execution time for jobs in queue
 			for (Job job : jobQueue) {

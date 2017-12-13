@@ -66,4 +66,6 @@ master/src/main/webapp/worker/worker-1.0-all.jar
 /master/job/
 /master/job_templates/
 master/src/main/webapp/worker/worker-1.0-all.jar
-master/src/main/webapp/worker/worker-1.0-all.jar
+
+/.gradle/
+/.idea/

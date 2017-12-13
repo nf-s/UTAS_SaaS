@@ -535,6 +535,11 @@ public class Job {
 		if (getWorker() != null)
 			getWorker().jobFinished(this);
 
+		// If testing => delete files on finish
+		if(Master.TESTING) {
+			deleteDirRecursively(baseDirectory);
+		}
+
 	}
 
 	// ------------------------------------------------------------------------

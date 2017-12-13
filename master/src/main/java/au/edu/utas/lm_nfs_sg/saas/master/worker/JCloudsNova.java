@@ -7,14 +7,19 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.apache.commons.io.IOUtils;
 import org.jclouds.ContextBuilder;
+import org.jclouds.JcloudsVersion;
 import org.jclouds.openstack.nova.v2_0.NovaApi;
 import org.jclouds.openstack.nova.v2_0.domain.Flavor;
+import org.jclouds.openstack.nova.v2_0.domain.Server;
 import org.jclouds.openstack.nova.v2_0.domain.ServerCreated;
 import org.jclouds.openstack.nova.v2_0.domain.ServerExtendedStatus;
 import org.jclouds.openstack.nova.v2_0.domain.regionscoped.AvailabilityZone;
+import org.jclouds.openstack.nova.v2_0.extensions.HypervisorApi;
+import org.jclouds.openstack.nova.v2_0.extensions.QuotaApi;
 import org.jclouds.openstack.nova.v2_0.features.FlavorApi;
 import org.jclouds.openstack.nova.v2_0.features.ServerApi;
 import org.jclouds.openstack.nova.v2_0.options.CreateServerOptions;
+import org.jclouds.openstack.v2_0.domain.Resource;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -26,9 +31,9 @@ public class JCloudsNova implements Closeable {
 	// ------------------------------------------------------------------------
 	// Static Properties
 	// ------------------------------------------------------------------------
-	public static final String TAG="<JCloudsNova>";
+	public static final String TAG = "<JCloudsNova>";
 	public static final String DEFAULT_IMAGE_ID = "210b3c59-3238-4abf-9447-dffbcca5cd1b";
-	public static final Long DEFAULT_ESTIMATED_INSTANCE_CREATION_TIME = 180000L; // 3 Minutes
+	public static final Long DEFAULT_ESTIMATED_INSTANCE_CREATION_TIME = 120000L; // 2 Minutes
 
 	// Nectar cloud config constants
 	private static final String NECTAR_ENDPOINT = "https://keystone.rc.nectar.org.au:5000/v2.0/";
@@ -132,15 +137,19 @@ public class JCloudsNova implements Closeable {
 		this.instanceFlavour = flav;
 		this.workerId = workerId;
 		this.workerType = workerType;
-    }
+	}
 
-    // Constructor for already launched cloud instances
+	// Constructor for already launched cloud instances
 	public JCloudsNova(String id, Flavor flav, String workerId, WorkerType workerType) {
 		this(flav, workerId, workerType);
 
 		this.instanceId = id;
 
 		instances.add(instanceId);
+	}
+
+	public static void main(String[] args) {
+		new JCloudsNova();
 	}
 
 	// ------------------------------------------------------------------------
@@ -150,17 +159,37 @@ public class JCloudsNova implements Closeable {
 	public static Flavor getDefaultFlavour() {
 		return defaultFlavour;
 	}
+
 	public static Flavor getLargestFlavour() {
 		return largestFlavour;
 	}
-	public static Map<String, Flavor> getFlavours() {return availableImageFlavours;}
 
-	String getInstanceHostname() {return instanceHostname;}
+	public static Map<String, Flavor> getFlavours() {
+		return availableImageFlavours;
+	}
 
-	Flavor getInstanceFlavour() {return instanceFlavour;}
+	String getInstanceHostname() {
+		return instanceHostname;
+	}
+
+	Flavor getInstanceFlavour() {
+		return instanceFlavour;
+	}
 
 	String getInstanceState() {
 		return serverApi.get(instanceId).getStatus().value();
+	}
+
+	String getInstanceState(String id) {
+		Server server = serverApi.get(id);
+		if (server != null)
+			try {
+				return server.getStatus().value();
+			} catch (NullPointerException e) {
+				return null;
+			}
+		else
+			return null;
 	}
 
 	ServerExtendedStatus getInstanceExtendedStatus() {
@@ -168,12 +197,14 @@ public class JCloudsNova implements Closeable {
 	}
 
 	String getTag() {
-		if(instanceHostname != null) {
+		if (instanceHostname != null) {
 			return String.format("%s [%s]", TAG, instanceHostname);
 		} else {
 			return TAG;
 		}
 	}
+
+
 
 	// ------------------------------------------------------------------------
 	// Initiation Methods
@@ -185,17 +216,17 @@ public class JCloudsNova implements Closeable {
 		FlavorApi flavors = novaApi.getFlavorApi(NECTAR_REGION);
 		for (Flavor flav : flavors.listInDetail().concat()) {
 			// This insures that only non-legacy flavours are included
-			if (flav.getName().equals("m2.small") || flav.getName().equals("m2.medium")|| flav.getName().equals("m2.large")) {
-				System.out.println(getTag() + " Added flavour - "+ flav.toString());
+			if (flav.getName().equals("m2.small") || flav.getName().equals("m2.medium") || flav.getName().equals("m2.large")) {
+				System.out.println(getTag() + " Added flavour - " + flav.toString());
 				availableImageFlavours.put(flav.getName(), flav);
 				if (flav.getName().equals(DEFAULT_FLAVOUR_NAME)) {
 
-					System.out.println(getTag() + " Default flavour - "+ flav.toString());
+					System.out.println(getTag() + " Default flavour - " + flav.toString());
 					defaultFlavour = flav;
 				}
 
-				if (flav.getName().equals(LARGEST_FLAVOUR_NAME)){
-					System.out.println(getTag() + " Largest flavour - "+ flav.toString());
+				if (flav.getName().equals(LARGEST_FLAVOUR_NAME)) {
+					System.out.println(getTag() + " Largest flavour - " + flav.toString());
 					largestFlavour = flav;
 				}
 			}
@@ -211,17 +242,17 @@ public class JCloudsNova implements Closeable {
 	// Worker Methods
 	// ------------------------------------------------------------------------
 
-	Boolean createWorker(){
+	Boolean createWorker() {
 		try {
 			startCreateCalendar = Calendar.getInstance();
 
-			System.out.println(getTag()+" Creating new cloud instance with flavour ="+instanceFlavour.getName());
+			System.out.println(getTag() + " Creating new cloud instance with flavour =" + instanceFlavour.getName());
 
 			// Worker startup script:
 			// Downloads worker-1.0-all.jar from web server (must be placed in 'worker' directory in src/.../webapps...)
-			String startupScript="#!/bin/bash\nsudo su ubuntu\n"+
-					"cd /home/ubuntu/saas \n"+
-					"curl -o worker.jar "+ Master.HOSTNAME+":"+Master.PORT+"/"+WORKER_JAR_LOCATION+" \n";
+			String startupScript = "#!/bin/bash\nsudo su ubuntu\n" +
+					"cd /home/ubuntu/saas \n" +
+					"curl -o worker.jar " + Master.HOSTNAME + ":" + Master.PORT + "/" + WORKER_JAR_LOCATION + " \n";
 
 			//  WORKER ARGUMENTS (expects 4):
 			//  1 - Worker id (string)
@@ -234,10 +265,10 @@ public class JCloudsNova implements Closeable {
 			if (Master.DEBUG)
 				System.out.printf("Startup Script: %n%s%n", startupScript);
 
-			CreateServerOptions options1= CreateServerOptions.Builder.keyPairName(DEFAULT_KEYPAIR_NAME)
+			CreateServerOptions options1 = CreateServerOptions.Builder.keyPairName(DEFAULT_KEYPAIR_NAME)
 					.securityGroupNames(DEFAULT_SECURITY_GROUPS_NAME).userData(startupScript.getBytes()).availabilityZone(DEFAULT_AVAILABILITY_ZONE);
 
-			ServerCreated server=serverApi.create(workerId,instanceImageId,instanceFlavour.getId(),options1);
+			ServerCreated server = serverApi.create(workerId, instanceImageId, instanceFlavour.getId(), options1);
 
 			instanceId = server.getId();
 
@@ -246,13 +277,13 @@ public class JCloudsNova implements Closeable {
 			return waitForInstance();
 
 		} catch (Exception e) {
-			System.out.println(getTag()+" An error occurred while creating new cloud instance");
+			System.out.println(getTag() + " An error occurred while creating new cloud instance");
 			e.printStackTrace();
 
 			return false;
 		}
 
-    }
+	}
 
 	private Boolean waitForInstance() {
 		try {
@@ -289,47 +320,50 @@ public class JCloudsNova implements Closeable {
 
 			return true;
 		} else {
-			System.out.println(getTag()+" could not create new cloud server - status = "+instanceState);
+			System.out.println(getTag() + " could not create new cloud server - status = " + instanceState);
 			terminateServer();
 			return false;
 		}
 	}
 
 	/**
-	 *  Instance has been launched successfully.
-	 *  This method calculates creation time and stores it to improve future creation time predictions
-	 *
-	 *  This method is called after the instance has been created AND successfully contacted through the Worker's Socket
-	 *   - It is called from Worker.startWorkerSocketThread()
+	 * Instance has been launched successfully.
+	 * This method calculates creation time and stores it to improve future creation time predictions
+	 * <p>
+	 * This method is called after the instance has been created AND successfully contacted through the Worker's Socket
+	 * - It is called from Worker.startWorkerSocketThread()
 	 */
 	void launchSuccessful() {
 		instances.add(instanceId);
-    	finishCreateCalendar = Calendar.getInstance();
-    	timeTakenToCreate = finishCreateCalendar.getTimeInMillis()-startCreateCalendar.getTimeInMillis();
+		finishCreateCalendar = Calendar.getInstance();
+		timeTakenToCreate = finishCreateCalendar.getTimeInMillis() - startCreateCalendar.getTimeInMillis();
 
-		System.out.println(getTag()+" took "+(timeTakenToCreate/1000)+" seconds to create");
+		System.out.println(getTag() + " took " + (timeTakenToCreate / 1000) + " seconds to create");
 
-    	if (instanceFlavourCreationTime == null)
+		if (instanceFlavourCreationTime == null)
 			instanceFlavourCreationTime = new HashMap<>();
 
 		if (!instanceFlavourCreationTime.containsKey(instanceFlavour))
-    		instanceFlavourCreationTime.put(instanceFlavour, new ArrayList<>());
+			instanceFlavourCreationTime.put(instanceFlavour, new ArrayList<>());
 
 		instanceFlavourCreationTime.get(instanceFlavour).add(timeTakenToCreate);
 	}
 
 	public void launchFailed() {
-		System.out.println(getTag()+" LAUNCH FAILED");
+		System.out.println(getTag() + " LAUNCH FAILED");
 		terminateServer();
 	}
 
 	Boolean terminateServer() {
-		return terminateServer(instanceId);
+		return terminateServer(instanceId, true);
 	}
-	private Boolean terminateServer(String instanceId) {
+
+	private Boolean terminateServer(String instanceId, Boolean deleteFromList) {
 		serverApi.delete(instanceId);
-		if (instances.contains(instanceId))
+
+		if (deleteFromList && instances.contains(instanceId)) {
 			instances.remove(instanceId);
+		}
 
 		String serverTaskStatus = serverApi.get(instanceId).getExtendedStatus().get().getTaskState();
 
@@ -343,30 +377,72 @@ public class JCloudsNova implements Closeable {
 	}
 
 	public void terminateAll() {
-		System.out.println(getTag()+" Terminating all cloud instances...");
-		instances.forEach(this::terminateServer);
+		System.out.println(getTag() + " Terminating all cloud instances...");
+
+		try {
+			serverApi.list().forEach(resources -> resources.forEach(resource -> {
+				if (resource != null && resource.getId() != null && isWorkerNode(resource.getId())) {
+					Boolean deleteSuccess = serverApi.delete(resource.getId());
+					if (!deleteSuccess)
+						serverApi.delete(resource.getId());
+
+					String serverInstanceState = serverApi.get(resource.getId()).getExtendedStatus().get().getTaskState();
+					if (serverInstanceState != null)
+						System.out.printf("%sDeleting server: %s status=%s%n", getTag(), resource.getId(), serverInstanceState);
+				}
+			}));
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		instances.clear();
+	}
+
+
+	public int getNumWorkersCreated() {
+		final int[] serversRunning = new int[1];
+		serversRunning[0] = 0;
+		serverApi.list().forEach(resources -> resources.forEach(resource -> {
+			if (resources != null && resource.getId()!= null && isWorkerNode(resource.getId())) {
+				serversRunning[0]++;
+				String serverInstanceState = getInstanceState(resource.getId());
+				if (serverInstanceState != null)
+					System.out.println(serverInstanceState);
+			}
+		}));
+
+		return serversRunning[0];
+	}
+
+	Boolean isWorkerNode(String id) {
+		Server server = serverApi.get(id);
+		try {
+			return server != null && server.getImage().getId().equals(DEFAULT_IMAGE_ID) && !server.getName().equals("nfs-spark-master");
+		} catch (NullPointerException e) {
+			return false;
+		}
 	}
 
 	// ------------------------------------------------------------------------
 	// JCloud Methods
 	// ------------------------------------------------------------------------
 
-    public void close() throws IOException {
-        Closeables.close(novaApi, true);
-    }
+	public void close() throws IOException {
+		Closeables.close(novaApi, true);
+	}
 
 	// ------------------------------------------------------------------------
 	// Cloud Instance Creation Time Prediction
 	// ------------------------------------------------------------------------
 	public Long getElapsedCreationTimeInMs() {
-		if (startCreateCalendar!=null)
-			return Calendar.getInstance().getTimeInMillis()-startCreateCalendar.getTimeInMillis();
+		if (startCreateCalendar != null)
+			return Calendar.getInstance().getTimeInMillis() - startCreateCalendar.getTimeInMillis();
 		else
 			return 0L;
 	}
 
 	public Long getTimeTakenToCreate() {
-		if(timeTakenToCreate != null)
+		if (timeTakenToCreate != null)
 			return timeTakenToCreate;
 		else
 			return getElapsedCreationTimeInMs();
@@ -375,26 +451,30 @@ public class JCloudsNova implements Closeable {
 	public Long getEstimatedCreationTimeInMs() {
 		return estimateCreationTimeInMs(instanceFlavour);
 	}
-	public static Long estimateCreationTimeInMs() {return estimateCreationTimeInMs(defaultFlavour);}
-	public static Long estimateCreationTimeInMs(Flavor instanceFlavour) {
-    	Long returnEstimate;
 
-    	// If the specified instance flavour has creation time data saved
+	public static Long estimateCreationTimeInMs() {
+		return estimateCreationTimeInMs(defaultFlavour);
+	}
+
+	public static Long estimateCreationTimeInMs(Flavor instanceFlavour) {
+		Long returnEstimate;
+
+		// If the specified instance flavour has creation time data saved
 		if (instanceFlavourCreationTime != null && instanceFlavourCreationTime.containsKey(instanceFlavour)) {
 			Long averageCreationTime = 0L;
 
-			for(Long creationTime:instanceFlavourCreationTime.get(instanceFlavour)) {
+			for (Long creationTime : instanceFlavourCreationTime.get(instanceFlavour)) {
 				averageCreationTime += creationTime;
 			}
 
-			returnEstimate =  averageCreationTime/instanceFlavourCreationTime.get(instanceFlavour).size();
+			returnEstimate = averageCreationTime / instanceFlavourCreationTime.get(instanceFlavour).size();
 		}
 		// Or return default time - 3 minutes
 		else {
 			returnEstimate = DEFAULT_ESTIMATED_INSTANCE_CREATION_TIME;
 		}
 
-		System.out.println(TAG+" Estimated time to create worker (flavour="+instanceFlavour.getName()+") is "+returnEstimate.toString()+" ms");
+		System.out.println(TAG + " Estimated time to create worker (flavour=" + instanceFlavour.getName() + ") is " + returnEstimate.toString() + " ms");
 
 		return returnEstimate;
 	}
