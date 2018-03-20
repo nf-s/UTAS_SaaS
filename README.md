@@ -15,7 +15,7 @@ Gradle should handle everything.
 I recommend using IntelliJ, as Gradle will download required dependencies on project import.
 
 ### NectarCloud Credentials (JSON File)
-Modify properties in master/src/main/resources/nectarcloud_config - SAMPLE.json
+Modify properties in `master/src/main/resources/nectarcloud_config - SAMPLE.json`
       
       {
           "osTenantName": "",
