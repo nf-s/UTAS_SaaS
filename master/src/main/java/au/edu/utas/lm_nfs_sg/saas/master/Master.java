@@ -23,7 +23,7 @@ public final class Master {
 	//================================================================================
 
 	public static final Boolean DEBUG = true;
-	public static final Boolean TESTING = true;
+	public static final Boolean TESTING = false;
 
 	// Tag for debugging purposes
 	public static final String TAG = "<Master>";
