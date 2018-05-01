@@ -123,3 +123,4 @@ Large file uploads using web client can timeout (without HTTP response). This is
 + NectarCloud defualt user is ubuntu
 + Use PuttyGen to convert private key from .pem to .ppk
 + Use WinSCP to transfer files
++ SSH and SFTP on Mac: `https://stackoverflow.com/questions/3475069/use-ppk-file-in-mac-terminal-to-connect-to-remote-connection-over-ssh?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa`
