@@ -31,8 +31,10 @@ Settings -> Reset Password
 
 Then rename file to `nectarcloud_config.json`
 
-### NectarCloud Configuration (in JCloudsNova.java)
-NectarCloud Keypair name  
+### NectarCloud Configuration (in JCloudsNova.java)  
+In `master/src/main/java/.../master/worker/JCloudsNova.java`  
+
+**NectarCloud Keypair name**  
 DEFAULT_KEYPAIR_NAME = "KIT318";
 
 **Security Group**  
@@ -51,20 +53,20 @@ As this port is used for the Java Socket server running on the Worker node.
        
 DEFAULT_SECURITY_GROUPS_NAME = "saas";
 
-Default Image ID used when creating new instances  
+**Default Image ID used when creating new instances**  
 `DEFAULT_IMAGE_ID = "210b3c59-3238-4abf-9447-dffbcca5cd1b";`
   
 `NECTAR_ENDPOINT = "https://keystone.rc.nectar.org.au:5000/v2.0/";`
 
-NectarCloud API Region  
+**NectarCloud API Region**  
 `NECTAR_REGION = "Melbourne";`
 
 `DEFAULT_FLAVOUR_NAME = "m2.small";`
 
-Largest flavour which can be created  
+**Largest flavour which can be created**  
 `LARGEST_FLAVOUR_NAME = "m2.large";`
 
-Default region where instances are launched  
+**Default region where instances are launched**  
 `DEFAULT_AVAILABILITY_ZONE = "tasmania";`
 
 ### Gradle Tasks
@@ -105,6 +107,9 @@ Currently it is:
 
     /opt/csiro.au/spark_batch_fsp/bin/spark-batch
     
+    
+### Limitations
+Instances don't auto-delete.
 
 ### Known Issues
 Large file uploads using web client can timeout (without HTTP response). This is due to a bug in Jetty web server.
