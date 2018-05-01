@@ -14,7 +14,10 @@
 Gradle should handle everything.  
 I recommend using IntelliJ, as Gradle will download required dependencies on project import.
 
-### NectarCloud Credentials (JSON File)
+### NectarCloud Credentials (JSON File)  
+https://support.ehelp.edu.au/support/solutions/articles/6000078065-api  
+Download NectarCloud Credentials from Compute -> Access & Security -> Download OpenStack RC File
+
 Modify properties in `master/src/main/resources/nectarcloud_config - SAMPLE.json`
       
       {
@@ -23,9 +26,34 @@ Modify properties in `master/src/main/resources/nectarcloud_config - SAMPLE.json
           "credential": ""
       }
       
+**osTenantName**  
+Is the NectarCloud Project Name (`OS_PROJECT_NAME` in the OpenStack RC File)
+        
+**Credentials**
+Settings -> Reset Password
+
 Then rename file to `nectarcloud_config.json`
 
 ### NectarCloud Configuration (in JCloudsNova.java)
+NectarCloud Keypair name  
+DEFAULT_KEYPAIR_NAME = "KIT318";
+
+**Security Group**  
+The security group must have inbound TCP traffic allowed for the post specified for the Master REST API (in *Set Hostname/Port of Master*).
+As this port is used for the Java Socket server running on the Worker node.  
+
+*Example Security Group*
+
+    Egress	IPv6	Any	Any	        ::/0  
+    Egress	IPv4	Any	Any	        0.0.0.0/0  
+    Ingress	IPv4	TCP	22 (SSH)	0.0.0.0/0  
+    Ingress	IPv4	TCP	80 (HTTP)	0.0.0.0/0  
+    Ingress	IPv4	TCP	443 (HTTPS) 0.0.0.0/0  
+    Ingress	IPv4	TCP	8081	    0.0.0.0/0  
+    Ingress	IPv4	TCP	8443	    0.0.0.0/0  
+       
+DEFAULT_SECURITY_GROUPS_NAME = "saas";
+
 Default Image ID used when creating new instances  
 `DEFAULT_IMAGE_ID = "210b3c59-3238-4abf-9447-dffbcca5cd1b";`
   
@@ -33,14 +61,6 @@ Default Image ID used when creating new instances
 
 NectarCloud API Region  
 `NECTAR_REGION = "Melbourne";`
-
-NectarCloud Keypair name  
-`DEFAULT_KEYPAIR_NAME = "KIT318";`
-
-**Security Group**  
-The security group must have inbound TCP traffic allowed for the post specified for the Master REST API (in *Set Hostname/Port of Master*).
-As this port is used for the Java Socket server running on the Worker node.  
-`DEFAULT_SECURITY_GROUPS_NAME = "saas";  `
 
 `DEFAULT_FLAVOUR_NAME = "m2.small";`
 
@@ -91,3 +111,8 @@ Currently it is:
 
 ### Known Issues
 Large file uploads using web client can timeout (without HTTP response). This is due to a bug in Jetty web server.
+
+### Tips
++ NectarCloud defualt user is ubuntu
++ Use PuttyGen to convert private key from .pem to .ppk
++ Use WinSCP to transfer files
