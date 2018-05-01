@@ -35,7 +35,7 @@ Then rename file to `nectarcloud_config.json`
 In `master/src/main/java/.../master/worker/JCloudsNova.java`  
 
 **NectarCloud Keypair name**  
-DEFAULT_KEYPAIR_NAME = "KIT318";
+`DEFAULT_KEYPAIR_NAME = "KIT318";`
 
 **Security Group**  
 The security group must have inbound TCP traffic allowed for the post specified for the Master REST API (in *Set Hostname/Port of Master*).
@@ -51,16 +51,21 @@ As this port is used for the Java Socket server running on the Worker node.
     Ingress	IPv4	TCP	8081	    0.0.0.0/0  
     Ingress	IPv4	TCP	8443	    0.0.0.0/0  
        
-DEFAULT_SECURITY_GROUPS_NAME = "saas";
+`DEFAULT_SECURITY_GROUPS_NAME = "saas";`
 
 **Default Image ID used when creating new instances**  
 `DEFAULT_IMAGE_ID = "210b3c59-3238-4abf-9447-dffbcca5cd1b";`
+
+There is an image on NectarCloud running Ubuntu preinstalled with Spark:
++ Name: nfs-spark-02
++ Image id: 210b3c59-3238-4abf-9447-dffbcca5cd1b
   
 `NECTAR_ENDPOINT = "https://keystone.rc.nectar.org.au:5000/v2.0/";`
 
 **NectarCloud API Region**  
 `NECTAR_REGION = "Melbourne";`
 
+**Default flavour to create**  
 `DEFAULT_FLAVOUR_NAME = "m2.small";`
 
 **Largest flavour which can be created**  
