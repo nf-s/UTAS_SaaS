@@ -15,9 +15,6 @@ Gradle should handle everything.
 I recommend using IntelliJ, as Gradle will download required dependencies on project import.
 
 ### NectarCloud Credentials (JSON File)  
-https://support.ehelp.edu.au/support/solutions/articles/6000078065-api  
-Download NectarCloud Credentials from Compute -> Access & Security -> Download OpenStack RC File
-
 Modify properties in `master/src/main/resources/nectarcloud_config - SAMPLE.json`
       
       {
@@ -27,9 +24,9 @@ Modify properties in `master/src/main/resources/nectarcloud_config - SAMPLE.json
       }
       
 **osTenantName**  
-Is the NectarCloud Project Name (`OS_PROJECT_NAME` in the OpenStack RC File)
+Is the NectarCloud Project Name
         
-**Credentials**
+**Credentials**  
 Settings -> Reset Password
 
 Then rename file to `nectarcloud_config.json`
