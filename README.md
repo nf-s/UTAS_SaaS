@@ -9,7 +9,6 @@
     + Worker status and Job status enums
     + Worker type and Job type enums
 
-
 ### Dependencies
 Gradle should handle everything.  
 I recommend using IntelliJ, as Gradle will download required dependencies on project import.
@@ -124,3 +123,95 @@ Large file uploads using web client can timeout (without HTTP response). This is
 + Use PuttyGen to convert private key from .pem to .ppk
 + Use WinSCP to transfer files
 + SSH and SFTP on Mac: `https://stackoverflow.com/questions/3475069/use-ppk-file-in-mac-terminal-to-connect-to-remote-connection-over-ssh?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa`
+
+# Code Structure
+Four Modules
+## Master Server
+`/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master`
+
+### `Master`
+Handles:
++ Requests from RestAPI
++ Job Scheduling
++ 
+
+### `PerformanceEvaluation`
+Used for testing purposes
+
+### worker/`Worker`
+Is the Worker Monitor in paper
+
+Handles:
++ Communication with worker via socket
+    + Server to worker communication is via socket and *most* worker to server communication is via RestAPI
+        + Worker log output is send through socket
+    + Assigning jobs
+    + Deleting Jobs
+
+### worker/`JCloudsNova`
+Is the Cloud VM Monitor in paper.
+
+Uses JClouds API to interact with NectarCloud through the OpenStack Nova API:
++ Create instance
++ Terminate instance
++ Get instance status
++ ...
+
+### job/`Job`
+
+### job/`JobJSONSerializer`
+
+### job/`SparkJob`
+
+### job/`FreqCountJob`
+Used for testing purposes
+
+### rest/`MasterRestApi`
+Base class for Rest API
+...
+
+### rest/`JobResource`
+Job API endpoints - for both Client and Worker
+
+...
+
+### rest/`ClientJobResource`
+Job API endpoints exclusively for Client
+
+...
+
+### rest/`WorkerJobResource`
+Job API endpoints exclusively for Worker node
+
+...
+
+### rest/`WorkerResource`
+Worker (on master - that is the WorkerMonitor) API endpoints   
+
++ SetWorkerStatus `PUT: worker/{id}/status`
+    + {"status": ...}
+
+## Master Web Client
+`master/src/main/webapp`
+
+## Worker
+`master/worker/src/main/java/au/edu/utas/lm_nfs_sg/saas/worker`  
+
+## Comms
+`comms/src/main/java/au/edu/utas/lm_nfs_sg/saas/comms`  
+Socket communication library
+
+### `SocketCommunication`
+Handles Sending/Receiving messages with `DataOutputStream/DataInputStream`  
+Provides `MessageReceivedListener` and `StatusChangeListener` interface
+
+### `SocketServer1To1` extends `SocketCommunication` class
+Provides Socket Server with only 1 concurrent connection
+
+### `SocketClient` extends `SocketCommunication` class
+Provides Socket Client
+
+## Common
+`common/src/main/java/au/edu/lm_nf_sg/saas/common`  
+    + Worker status and Job status enums
+    + Worker type and Job type enums
