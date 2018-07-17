@@ -130,10 +130,12 @@ Four Modules
 `/master/src/main/java/au/edu/utas/lm_nfs_sg/saas/master`
 
 ### `Master`
+**Main Master class**
+
 Handles:
-+ Requests from RestAPI
++ All Jobs and Workers are kept in List for reference
++ Requests from RestAPI MUST pass through the Master class
 + Job Scheduling
-+ 
 
 ### `PerformanceEvaluation`
 Used for testing purposes
@@ -142,11 +144,14 @@ Used for testing purposes
 Is the Worker Monitor in paper
 
 Handles:
++ Keeps track of `WorkerStatus`
++ Instance creation/termination through `JCloudsNova`
 + Communication with worker via socket
     + Server to worker communication is via socket and *most* worker to server communication is via RestAPI
         + Worker log output is send through socket
     + Assigning jobs
     + Deleting Jobs
++ Keeps track of job queue on worker
 
 ### worker/`JCloudsNova`
 Is the Cloud VM Monitor in paper.
@@ -158,30 +163,47 @@ Uses JClouds API to interact with NectarCloud through the OpenStack Nova API:
 + ...
 
 ### job/`Job`
+Job Super class
+
+Handles:
++ File management:
+    + configDirectory
+	+ resourcesDirectory
+	+ resultsDirectory
++ Keeps track of `JobStatus`
++ Estimating time to execute job on different VMs
 
 ### job/`JobJSONSerializer`
++ Job to JSON Serialiser for web interface (i.e. job status, job id, ..., **DOES NOT include job config**)
+    + See `SparkJob` class for Spark XML to JSON converting
 
 ### job/`SparkJob`
+Extends `Job` class
+
+Handles:
++ Converting unploaded Spark XML config to JSON for web interface
++ Estimating time to execute Spark job
 
 ### job/`FreqCountJob`
 Used for testing purposes
 
 ### rest/`MasterRestApi`
-Base class for Rest API
+Base class for Rest API  
+
 ...
 
 ### rest/`JobResource`
-Job API endpoints - for both Client and Worker
+Job API endpoints - for both Client and Worker  
 
 ...
 
 ### rest/`ClientJobResource`
-Job API endpoints exclusively for Client
+Job API endpoints exclusively for Client (web interface)  
 
 ...
 
 ### rest/`WorkerJobResource`
-Job API endpoints exclusively for Worker node
+Job API endpoints exclusively for Worker node  
 
 ...
 
@@ -190,16 +212,46 @@ Worker (on master - that is the WorkerMonitor) API endpoints
 
 + SetWorkerStatus `PUT: worker/{id}/status`
     + {"status": ...}
+    
+...
 
 ## Master Web Client
 `master/src/main/webapp`
 
+VueJS (somewhat), Axios and lots of vanilla JS, with pure CSS front-end.
+
 ## Worker
 `master/worker/src/main/java/au/edu/utas/lm_nfs_sg/saas/worker`  
+
+### `Worker`
+**Main Worker class**
+
+Handles:
++ `WorkerStatus` - will also update on Master node through MasterRestClient
++ Job Queue
+    + Job assigning, launching, stopping
++ Communication **from** master through `comm` classes
+
+### job/`Job`
+Spark Job Class on Worker node
+
+Handles:
++ Downloading/uploading files through `MasterRestClient`
++ Deleting files after completion
++ Starting/Monitoring/Stopping Job Process (including StdOut and StdErr)
+    + All StdOut and StdErr messages are relayed to Master through socket (in main `Worker` class - see Worker.sendMessageToMasterSocket())
+
+### rest/`MasterRestClient`
+Handles:
++ Downloading job files (config, resources...) from master
++ Uploading job results to master
++ Get/Put JSON strings (i.e. updating `WorkerStatus`)
 
 ## Comms
 `comms/src/main/java/au/edu/utas/lm_nfs_sg/saas/comms`  
 Socket communication library
+
+Currently this library is only used for Master to Worker communication and for Worker logging (all worker logging messages are sent to master for debugging).
 
 ### `SocketCommunication`
 Handles Sending/Receiving messages with `DataOutputStream/DataInputStream`  
