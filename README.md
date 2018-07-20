@@ -190,30 +190,119 @@ Used for testing purposes
 ### rest/`MasterRestApi`
 Base class for Rest API  
 
-...
+Registers 'Resource' files
 
 ### rest/`JobResource`
 Job API endpoints - for both Client and Worker  
 
-...
+Not ideal - but will do for now...  
+```java
+	@Path("active")
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response getActiveJobs()
+
+	@Path("inactive")
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response getInactiveJobs()
+
+	@Path("{id}")
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response getJob(@PathParam("id") String jobId) 
+
+	@GET
+	@Path("{id}/{folder}/{request}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response getDirectoryDetails(
+		@PathParam("id") String jobId, 
+		@PathParam("folder") String folder, 
+		@PathParam("request") String request) 
+
+	@Path("{id}/{folder}/file/{filename}")
+	@GET
+	@Produces(MediaType.APPLICATION_OCTET_STREAM)
+	public Response getFile(
+		@PathParam("id") String jobId, 
+		@PathParam("filename") String filename, 
+		@PathParam("folder") String folder) 
+
+	@Path("{id}/config/file")
+	@GET
+	@Produces(MediaType.APPLICATION_OCTET_STREAM)
+	public Response getConfigFile(@PathParam("id") String jobId)
+
+	@Path("{id}/resources/file")
+	@POST
+	@Consumes(MediaType.MULTIPART_FORM_DATA)
+	public Response uploadSingleJobResourcesFile(@PathParam("id") String jobId,
+		@FormDataParam("file") InputStream file,
+		@FormDataParam("file") FormDataContentDisposition fileDisposition) 
+
+	// Job resources - Multiple File upload
+	@Path("{id}/resources/files")
+	@POST
+	@Consumes(MediaType.MULTIPART_FORM_DATA)
+	public Response uploadMultipleJobResourcesFiles(
+		@PathParam("id") String jobId,
+		@FormDataParam("files") List<FormDataBodyPart> bodyParts,
+		@FormDataParam("files") FormDataContentDisposition fileDispositions)
+
+	@POST
+	@Path("{id}/resources/process_uploaded")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response processUploadedFiles(@PathParam("id") String jobId)
+```
 
 ### rest/`ClientJobResource`
 Job API endpoints exclusively for Client (web interface)  
 
-...
+Base Path:
+```java
+@Path("client/job")
+```
+
+```java
+	@POST
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response createNewJob()
+
+	@Path("{id}")
+	@PUT
+	@Consumes(MediaType.APPLICATION_JSON)
+	public Response updateJob(@PathParam("id") String jobId, String jsonRequest)
+
+	@Path("{id}")
+	@DELETE
+	public Response deleteJob(@PathParam("id") String jobId)
+
+	@Path("{id}/launch")
+	@PUT
+	@Consumes(MediaType.APPLICATION_JSON)
+	public Response launchJob(@PathParam("id") String jobId, String jsonRequest)
+
+	@Path("{id}/stop")
+	@PUT
+	@Consumes(MediaType.APPLICATION_JSON)
+	public Response stopJob(@PathParam("id") String jobId)
+```
 
 ### rest/`WorkerJobResource`
 Job API endpoints exclusively for Worker node  
 
-...
++ Update Job Status (from worker node): 
+	+ **PUT** worker/job/`$job_id`/status: `{"status": $new_job_status}`
++ Upload Job Result File (singular)
+	+ **POST** worker/job/`$job_id`/results/file: `{"file": $file}`
++ Upload Job Result File*s* (multiple)
+	+ **POST** worker/job/`$job_id`/results/files: `{"files": $files}`
 
 ### rest/`WorkerResource`
-Worker (on master - that is the WorkerMonitor) API endpoints   
+Worker Node API endpoints
 
-+ SetWorkerStatus `PUT: worker/{id}/status`
-    + {"status": ...}
-    
-...
++ Update Worker Status (from worker node): 
+	+ **PUT** worker/`$worker_id`/status: `{"status": $new_job_status}`
 
 ## Master Web Client
 `master/src/main/webapp`
@@ -269,7 +358,10 @@ Provides Socket Client
     + Worker type and Job type enums
 
 ### `JobStatus`
-![alt text]( "Job Status - Stage Diagram")
+<img src="http://www.mdpi.com/remotesensing/remotesensing-10-00074/article_deploy/html/images/remotesensing-10-00074-g002.png" alt="Job Status - Stage Diagram" width="500px"/>
 
-<img src="http://www.mdpi.com/remotesensing/remotesensing-10-00074/article_deploy/html/images/remotesensing-10-00074-g002.png" alt="Job Status - Stage Diagram" style="width:400px;"/>
+Note: All "On Worker" Job States are updated on Master through the REST Api (See rest/`WorkerJobResource`):
++ **PUT** worker/job/`$job_id`/status: `{"status": $new_job_status}`
 
+### `WorkerStatus`
+Similarly, for Worker States see rest/`WorkerResource`
