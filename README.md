@@ -267,3 +267,7 @@ Provides Socket Client
 `common/src/main/java/au/edu/lm_nf_sg/saas/common`  
     + Worker status and Job status enums
     + Worker type and Job type enums
+
+### `JobStatus`
+![alt text](http://www.mdpi.com/remotesensing/remotesensing-10-00074/article_deploy/html/images/remotesensing-10-00074-g002.png "Job Status - Stage Diagram")
+
