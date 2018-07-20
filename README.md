@@ -269,5 +269,7 @@ Provides Socket Client
     + Worker type and Job type enums
 
 ### `JobStatus`
-![alt text](http://www.mdpi.com/remotesensing/remotesensing-10-00074/article_deploy/html/images/remotesensing-10-00074-g002.png "Job Status - Stage Diagram")
+![alt text]( "Job Status - Stage Diagram")
+
+<img src="http://www.mdpi.com/remotesensing/remotesensing-10-00074/article_deploy/html/images/remotesensing-10-00074-g002.png" alt="Job Status - Stage Diagram" style="width:400px;"/>
 
