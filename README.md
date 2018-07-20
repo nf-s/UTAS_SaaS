@@ -354,13 +354,15 @@ Provides Socket Client
 
 ## Common
 `common/src/main/java/au/edu/lm_nf_sg/saas/common`  
-    + Worker status and Job status enums
-    + Worker type and Job type enums
+
++ Worker status and Job status enums
++ Worker type and Job type enums
 
 ### `JobStatus`
 <img src="http://www.mdpi.com/remotesensing/remotesensing-10-00074/article_deploy/html/images/remotesensing-10-00074-g002.png" alt="Job Status - Stage Diagram" width="500px"/>
 
 Note: All "On Worker" Job States are updated on Master through the REST Api (See rest/`WorkerJobResource`):
+
 + **PUT** worker/job/`$job_id`/status: `{"status": $new_job_status}`
 
 ### `WorkerStatus`
